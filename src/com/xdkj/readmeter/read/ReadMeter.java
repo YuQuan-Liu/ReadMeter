@@ -8,6 +8,8 @@ import java.util.Arrays;
 
 import com.xdkj.readmeter.dao.GPRSDao;
 import com.xdkj.readmeter.dao.MeterDao;
+import com.xdkj.readmeter.dao.ReadLogDao;
+import com.xdkj.readmeter.dao.ReadMeterLogDao;
 import com.xdkj.readmeter.obj.Frame;
 import com.xdkj.readmeter.obj.GPRS;
 import com.xdkj.readmeter.obj.Meter;
@@ -52,6 +54,9 @@ public class ReadMeter extends Thread{
 		int count = 0;
 		byte[] data = new byte[10];
 		String res = "";
+		boolean finished = false;  //抄表是否成功  默认不成功
+		String reason = "";  //抄表失败原因
+		int normal = 0;  //抄表是否正常  
 		
 		try {
 			s = new Socket(gprs.getIp(),gprs.getPort());
@@ -83,19 +88,24 @@ public class ReadMeter extends Thread{
 				while ((count = in.read(data, 0, 10)) > 0) {
 					if(count == 9 && (new String(data,0,9)).equalsIgnoreCase("BREAKDOWN")){
 //						ReadLogDao.insertData(meter.getGprs().getPid(), meter.getColaddr(), meter.getMeteraddr(), (short)4, -1, "breakdown");
-						//TODO
+						//TODO 抄表记录 采集器breakdown
+						ReadMeterLogDao.addBreakdown(readlogid,gprs,meter);
 					}else{
 //						dataToDB(meter.getGprs(),new Acquisitor(meter.getColaddr(), 1),data);
-						//TODO
+						//TODO 抄表记录 插入最新抄上来的表的结果
+						ReadMeterLogDao.addReadMeterLog(readlogid,gprs,meter,data);
+						normal = 1;
 					}
+					finished = true;
 					break;// got the data (the num or BREAKDOWN)
 				}
 			}else{
 				//抄表失败 res
-				//TODO
+				reason = res;
 			}
 			
 		} catch (Exception e) {
+			reason = e.getMessage();
 			e.printStackTrace();
 		}finally{
 			try {
@@ -111,6 +121,18 @@ public class ReadMeter extends Thread{
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			String result = "";
+			if(finished){
+				if(normal == 1){
+					result = "正常1;异常0;超时0";
+				}else{
+					result = "正常0；异常0;超时1";
+				}
+			}else{
+				result = "正常0；异常1;超时0";
+			}
+			//更新readlog   
+			ReadLogDao.updateReadLog(readlogid,finished,reason,result);
 		}
 	}
 
@@ -120,6 +142,8 @@ public class ReadMeter extends Thread{
 		InputStream in = null;
 		int count = 0;
 		byte[] data = new byte[1024];
+		boolean finished = false;  //抄表是否成功  默认不成功
+		String reason = "";  //抄表失败原因
 		
 		try {
 			s = new Socket(gprs.getIp(),gprs.getPort());
@@ -170,21 +194,21 @@ public class ReadMeter extends Thread{
 							Frame readdata = new Frame(Arrays.copyOf(deal, middle));
 							byte[] meterdata = readdata.getData();
 //							dataToDB(gprs,col,deal);  TODO
+							ReadMeterLogDao.addReadMeterLog(readlogid,gprs,meter,meterdata);
+							finished = true;
 							break;
 						}
 					}
-//					result.put("success", "true");
 				}else{
 					//offline
-//					result.put("success", "false");
-//					result.put("error", "offline");
+					reason = "offline";
 				}
 			}else{
 				//监听错误
-//				result.put("success", "false");
-//				result.put("error", "offline error");
+				reason = "listener error";
 			}
 		} catch (Exception e) {
+			reason = e.getMessage();
 			e.printStackTrace();
 		} finally{
 			try {
@@ -200,6 +224,13 @@ public class ReadMeter extends Thread{
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			String result = "";
+			if(finished){
+				result = "正常1;异常0;超时0";
+			}else{
+				result = "正常0；异常1;超时0";
+			}
+			ReadLogDao.updateReadLog(readlogid,finished,reason,result);
 		}
 	}
 	

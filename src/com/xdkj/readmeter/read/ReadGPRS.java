@@ -14,6 +14,7 @@ import java.util.concurrent.CountDownLatch;
 
 import com.xdkj.readmeter.dao.GPRSDao;
 import com.xdkj.readmeter.dao.MeterDao;
+import com.xdkj.readmeter.dao.ReadMeterLogDao;
 import com.xdkj.readmeter.obj.Collector;
 import com.xdkj.readmeter.obj.Frame;
 import com.xdkj.readmeter.obj.GPRS;
@@ -21,14 +22,16 @@ import com.xdkj.readmeter.util.StringUtil;
 
 public class ReadGPRS extends Thread {
 
+	private int readlogid;
 	private GPRS gprs;
 	private CountDownLatch latch;
 	private ConcurrentMap<String, Map<String,String>> results;
 	
 	private Map<String, String> result = new HashMap<>();
 	
-	public ReadGPRS(GPRS gprs,ConcurrentMap<String, Map<String,String>> results, CountDownLatch latch) {
+	public ReadGPRS(int readlogid, GPRS gprs,ConcurrentMap<String, Map<String,String>> results, CountDownLatch latch) {
 		super();
+		this.readlogid = readlogid;
 		this.gprs = gprs;
 		this.results = results;
 		this.latch = latch;
@@ -58,6 +61,8 @@ public class ReadGPRS extends Thread {
 		int count = 0;
 		byte[] data = new byte[1024];
 		String res = "";
+		int normal = 0;
+		int timeout = 0;
 		
 		try {
 			s = new Socket(gprs.getIp(),gprs.getPort());
@@ -106,6 +111,7 @@ public class ReadGPRS extends Thread {
 						
 						if(count == 9 && (new String(data,0,count)).contains("BREAKDOWN")){
 //							breakdown(gprs,col); TODO
+							ReadMeterLogDao.addBreakdown(readlogid,gprs,col);
 							String breakdown = result.get("breakdown");
 							if(null == breakdown){
 								breakdown = col.getColAddr() +",";
@@ -113,10 +119,13 @@ public class ReadGPRS extends Thread {
 								breakdown = breakdown + col.getColAddr() +",";
 							}
 							result.put("breakdown", breakdown);
+							timeout += timeout;
 							break;
 						}
 						if(cjqmeters == meters){
 //							dataToDB(gprs,col,deal);  TODO
+							ReadMeterLogDao.addReadMeterLog(readlogid,gprs,col,deal);
+							normal += cjqmeters;
 							break;
 						}
 					}
@@ -128,9 +137,10 @@ public class ReadGPRS extends Thread {
 			}
 			
 		} catch (Exception e) {
+			result.put("success", "false");
+			result.put("error", e.getMessage());
 			e.printStackTrace();
 		} finally{
-			latch.countDown();
 			try {
 				if(out!=null){
 					out.close();
@@ -144,6 +154,8 @@ public class ReadGPRS extends Thread {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			result.put("result", "正常"+normal+";超时"+timeout);
+			latch.countDown();
 		}
 		
 	}
@@ -154,6 +166,7 @@ public class ReadGPRS extends Thread {
 		InputStream in = null;
 		int count = 0;
 		byte[] data = new byte[1024];
+		int normal = 0;
 		
 		try {
 			s = new Socket(gprs.getIp(),gprs.getPort());
@@ -205,7 +218,10 @@ public class ReadGPRS extends Thread {
 							Frame readdata = new Frame(Arrays.copyOf(deal, middle));
 							byte[] meterdata = readdata.getData();
 							meters -= (meterdata.length-1)/14;
+							//判断表的状态  看是否超时  TODO
 //							dataToDB(gprs,col,deal);  TODO
+							ReadMeterLogDao.addReadMeterLog(readlogid,gprs,meters,deal);
+							normal += meters;
 							if(meters == 0){
 								break;
 							}
@@ -224,9 +240,10 @@ public class ReadGPRS extends Thread {
 				result.put("error", "offline error");
 			}
 		} catch (Exception e) {
+			result.put("success", "false");
+			result.put("error", e.getMessage());
 			e.printStackTrace();
 		} finally{
-			latch.countDown();
 			try {
 				if(out!=null){
 					out.close();
@@ -240,6 +257,8 @@ public class ReadGPRS extends Thread {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			result.put("result", "正常"+normal);
+			latch.countDown();
 		}
 	}
 }

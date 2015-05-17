@@ -17,6 +17,8 @@ import com.xdkj.readmeter.util.StringUtil;
 public class ValveControl extends Thread{
 
 	private Valvelog valvelog;
+	private int normal = 0;
+	private int error = 0;
 	
 	public ValveControl(Valvelog valvelog) {
 		super();
@@ -32,6 +34,7 @@ public class ValveControl extends Thread{
 			valveConfLog = list.get(i);
 			valveControl(valveConfLog);
 		}
+		ValveLogDao.updateValveLog(valvelog,normal,error);
 	}
 
 
@@ -41,6 +44,8 @@ public class ValveControl extends Thread{
 		InputStream in = null;
 		int count = 0;
 		byte[] data = new byte[1024];
+		boolean finished = false;  //阀门开关是否成功  默认不成功
+		String reason = "";  //开关失败原因
 		
 		try {
 			s = new Socket(valveConfLog.getIp(),valveConfLog.getPort());
@@ -92,22 +97,28 @@ public class ValveControl extends Thread{
 						if(Frame.checkFrame(Arrays.copyOf(deal, middle))){
 							Frame readdata = new Frame(Arrays.copyOf(deal, middle));
 							//return ack  nack
-//							dataToDB(gprs,col,deal);  TODO
+							if(readdata.getFn() == 0x01){
+								//ack
+								normal++;
+								finished = true;
+							}else{
+								//nack 异常
+								error++;
+								reason = "nack";
+							}
 							break;
 						}
 					}
-//					result.put("success", "true");
 				}else{
 					//offline
-//					result.put("success", "false");
-//					result.put("error", "offline");
+					reason = "offline";
 				}
 			}else{
 				//监听错误
-//				result.put("success", "false");
-//				result.put("error", "offline error");
+				reason = "listener error";
 			}
 		} catch (Exception e) {
+			reason = e.getMessage();
 			e.printStackTrace();
 		} finally{
 			try {
@@ -123,6 +134,11 @@ public class ValveControl extends Thread{
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			if(!finished){
+				error++;
+			}
+//			dataToDB(gprs,col,deal);  TODO
+			ValveConfLogDao.updateValveConfLog(valvelog,finished,reason);
 		}
 	}
 }

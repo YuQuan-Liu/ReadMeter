@@ -44,4 +44,32 @@ public class ValveLogDao {
 		}
 		return valvelog;
 	}
+
+	public static void updateValveLog(Valvelog valvelog, int normal, int error) {
+		String SQL = "update valvelog " +
+				"set completecount = ?,errorcount=?,status = 100 " +
+				"where pid = ?";
+		
+		Connection con = null;
+		try {
+			con = DBPool.getConnection();
+			PreparedStatement pstmt = con.prepareStatement(SQL);
+			pstmt.setInt(1, normal);
+			pstmt.setInt(2, error);
+			pstmt.setInt(3, valvelog.getPid());
+			
+			pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally{
+			if(con != null){
+				try {
+					con.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+	}
 }

@@ -12,6 +12,7 @@ import org.apache.commons.beanutils.BeanUtils;
 
 import com.xdkj.readmeter.db.DBPool;
 import com.xdkj.readmeter.obj.ValveConfLog;
+import com.xdkj.readmeter.obj.Valvelog;
 import com.xdkj.readmeter.util.Result2Map;
 
 public class ValveConfLogDao {
@@ -54,5 +55,34 @@ public class ValveConfLogDao {
 			}
 		}
 		return list;
+	}
+
+	public static void updateValveConfLog(ValveConfLog valveConfLog, boolean finished,
+			String reason) {
+		
+		String SQL = "update valveconflog " +
+				"set result = ?,errorReason =?,errorstatus = 0,completetime = now() " +
+				"where pid = ?";
+		
+		Connection con = null;
+		try {
+			con = DBPool.getConnection();
+			PreparedStatement pstmt = con.prepareStatement(SQL);
+			pstmt.setInt(1, finished?1:2);
+			pstmt.setString(2, reason);
+			pstmt.setInt(3, valveConfLog.getPid());
+			
+			pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally{
+			if(con != null){
+				try {
+					con.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 }

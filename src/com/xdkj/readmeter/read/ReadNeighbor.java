@@ -45,7 +45,7 @@ public class ReadNeighbor extends Thread{
 		}
 		//the neighbor is read over
 		//get the result from the results the key is the gprsaddr the value is a map (which contains the result of the gprs)
-		//TODO
+		//
 		String reason = "";
 		String result = "";
 		for(Entry<String, Map<String, String>> entry : results.entrySet()){

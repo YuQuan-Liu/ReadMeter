@@ -110,7 +110,7 @@ public class ReadGPRS extends Thread {
 						int meters = (middle)/10;
 						
 						if(count == 9 && (new String(data,0,count)).contains("BREAKDOWN")){
-//							breakdown(gprs,col); TODO
+//							breakdown(gprs,col); 
 							ReadMeterLogDao.addBreakdown(readlogid,gprs,col);
 							String breakdown = result.get("breakdown");
 							if(null == breakdown){
@@ -124,7 +124,7 @@ public class ReadGPRS extends Thread {
 						}
 						if(cjqmeters == meters){
 //							dataToDB(gprs,col,deal);  TODO
-							ReadMeterLogDao.addReadMeterLog(readlogid,gprs,col,deal);
+							ReadMeterLogDao.addReadMeterLogs(readlogid,gprs,col,deal);
 							normal += cjqmeters;
 							break;
 						}
@@ -219,7 +219,7 @@ public class ReadGPRS extends Thread {
 							Frame readdata = new Frame(Arrays.copyOf(deal, middle));
 							byte[] meterdata = readdata.getData();
 							meters -= (meterdata.length-1)/14;
-							//判断表的状态  看是否超时  TODO
+							//判断表的状态  看是否超时  
 							for(int i = 0;i < meters;i++){
 								byte state = meterdata[i*14+1+12];
 								if(((state &0x40) ==0x40) && ((state &0x80)==0x80)){
@@ -229,7 +229,7 @@ public class ReadGPRS extends Thread {
 								}
 							}
 //							dataToDB(gprs,col,deal);  TODO
-							ReadMeterLogDao.addReadMeterLog(readlogid,gprs,meters,deal);
+							ReadMeterLogDao.addReadMeterLogs(readlogid,gprs,meters,deal);
 							
 							if(meters == 0){
 								break;

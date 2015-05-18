@@ -80,4 +80,62 @@ public class ReadLogDao {
 		}
 		return list;
 	}
+
+	public static void updateReadLog(int readlogid, boolean finished,
+			String reason, String result) {
+		
+		String SQL = "update readlog " +
+				"set ReadStatus = 100,FailReason = ?,CompleteTime = now(),Result = ? " +
+				"where PID = ";
+		
+		Connection con = null;
+		try {
+			con = DBPool.getConnection();
+			PreparedStatement pstmt = con.prepareStatement(SQL);
+			pstmt.setString(1, reason);
+			pstmt.setString(2, result);
+			pstmt.setInt(3, readlogid);
+			
+			pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally{
+			if(con != null){
+				try {
+					con.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+	}
+
+	public static void updateReadLog(int readlogid, String result, String reason) {
+		
+		String SQL = "update readlog " +
+				"set ReadStatus = 100,FailReason = ?,CompleteTime = now(),Result = ? " +
+				"where PID = ";
+		
+		Connection con = null;
+		try {
+			con = DBPool.getConnection();
+			PreparedStatement pstmt = con.prepareStatement(SQL);
+			pstmt.setString(1, reason);
+			pstmt.setString(2, result);
+			pstmt.setInt(3, readlogid);
+			
+			pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally{
+			if(con != null){
+				try {
+					con.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 }

@@ -138,8 +138,8 @@ public class ValveControl extends Thread{
 			if(!finished){
 				error++;
 			}
-//			dataToDB(gprs,col,deal);  TODO
-			ValveConfLogDao.updateValveConfLog(valvelog,finished,reason);
+//			dataToDB(gprs,col,deal);  
+			ValveConfLogDao.updateValveConfLog(valveConfLog,finished,reason);
 		}
 	}
 }

@@ -24,7 +24,7 @@ public class StringUtil {
 	
 
 	/**
-	 * 返回的指令拼接成字符串
+	 * 返回的指令拼接成字符串  中间加空格
 	 * @param b 需要拼接的byte[]
 	 * @param size   需要拼接的长度
 	 * @return
@@ -32,7 +32,21 @@ public class StringUtil {
 	public static String byteArrayToHexStr(byte[] b,int size){
 		StringBuilder sb = new StringBuilder();
 		for(int i = 0;i < size;i++){
-			sb.append(Integer.toHexString(b[i]&0xFF)+" ");
+			sb.append(String.format("%02x", b[i]&0xFF)+" ");
+		}
+		return sb.toString();
+	}
+	
+	/**
+	 * 返回的指令拼接成字符串  中间不加空格
+	 * @param b 需要拼接的byte[]
+	 * @param size   需要拼接的长度
+	 * @return
+	 */
+	public static String byteArrayToHexStrNonspace(byte[] b,int size){
+		StringBuilder sb = new StringBuilder();
+		for(int i = 0;i < size;i++){
+			sb.append(String.format("%02x", b[i]&0xFF));
 		}
 		return sb.toString();
 	}

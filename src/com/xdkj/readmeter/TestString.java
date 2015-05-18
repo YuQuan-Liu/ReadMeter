@@ -6,6 +6,8 @@ import java.lang.reflect.Array;
 
 import org.junit.Test;
 
+import com.xdkj.readmeter.util.StringUtil;
+
 public class TestString {
 
 	@Test
@@ -30,6 +32,17 @@ public class TestString {
 		}
 //		
 //		Arrays.
+	}
+	@Test
+	public void test2(){
+		byte[] b = new byte[10];
+		for(int i = 0;i < 10;i++){
+			b[i] = (byte) ((byte) i+0x10);
+			System.out.println(String.format("%02x", b[i]&0xFF));;
+		}
+		System.out.println(StringUtil.byteArrayToHexStr(b, 10));
+		
+		
 	}
 
 }

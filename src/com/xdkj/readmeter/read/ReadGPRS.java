@@ -167,6 +167,7 @@ public class ReadGPRS extends Thread {
 		int count = 0;
 		byte[] data = new byte[1024];
 		int normal = 0;
+		int timeout = 0;
 		
 		try {
 			s = new Socket(gprs.getIp(),gprs.getPort());
@@ -219,9 +220,17 @@ public class ReadGPRS extends Thread {
 							byte[] meterdata = readdata.getData();
 							meters -= (meterdata.length-1)/14;
 							//判断表的状态  看是否超时  TODO
+							for(int i = 0;i < meters;i++){
+								byte state = meterdata[i*14+1+12];
+								if(((state &0x40) ==0x40) && ((state &0x80)==0x80)){
+									timeout++;
+								}else{
+									normal++;
+								}
+							}
 //							dataToDB(gprs,col,deal);  TODO
 							ReadMeterLogDao.addReadMeterLog(readlogid,gprs,meters,deal);
-							normal += meters;
+							
 							if(meters == 0){
 								break;
 							}
@@ -257,7 +266,7 @@ public class ReadGPRS extends Thread {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			result.put("result", "正常"+normal);
+			result.put("result", "正常"+normal+";超时"+timeout);
 			latch.countDown();
 		}
 	}

@@ -89,11 +89,11 @@ public class ReadMeter extends Thread{
 					if(count == 9 && (new String(data,0,9)).equalsIgnoreCase("BREAKDOWN")){
 //						ReadLogDao.insertData(meter.getGprs().getPid(), meter.getColaddr(), meter.getMeteraddr(), (short)4, -1, "breakdown");
 						//TODO 抄表记录 采集器breakdown
-						ReadMeterLogDao.addBreakdown(readlogid,gprs,meter);
+						ReadMeterLogDao.addBreakdown(readlogid,gprs,mid);
 					}else{
 //						dataToDB(meter.getGprs(),new Acquisitor(meter.getColaddr(), 1),data);
 						//TODO 抄表记录 插入最新抄上来的表的结果
-						ReadMeterLogDao.addReadMeterLog(readlogid,gprs,meter,data);
+						ReadMeterLogDao.addReadMeterLog(readlogid,gprs,mid,data);
 						normal = 1;
 					}
 					finished = true;
@@ -194,7 +194,7 @@ public class ReadMeter extends Thread{
 							Frame readdata = new Frame(Arrays.copyOf(deal, middle));
 							byte[] meterdata = readdata.getData();
 //							dataToDB(gprs,col,deal);  TODO
-							ReadMeterLogDao.addReadMeterLog(readlogid,gprs,meter,meterdata);
+							ReadMeterLogDao.addReadMeterLog(readlogid,gprs,mid,meterdata);
 							finished = true;
 							break;
 						}

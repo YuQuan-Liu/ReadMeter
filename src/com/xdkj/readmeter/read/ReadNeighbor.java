@@ -60,4 +60,7 @@ public class ReadNeighbor extends Thread{
 		ReadLogDao.updateReadLog(readlogid,result,reason);
 	}
 
+	public static void main(String[] args) {
+		new ReadNeighbor(1, 1).start();
+	}
 }

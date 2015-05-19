@@ -86,7 +86,7 @@ public class MeterDao {
 
 	public static int getMeterCountByGID(Integer gid) {
 		String SQL = "select count(*) from meter " +
-				"where gprsid = ?";
+				"where gprsid = ? and valid = 1";
 		Connection con = null;
 		int count = 0;
 		try {

@@ -398,26 +398,30 @@ public class ReadMeterLogDao {
 			byte[] deal) {
 		int meterread = -1;
 		byte meterstatus = 1;
+		byte valvestatus = 1;
 		String remark = "";
 		String SQL = "insert into ReadMeterLog " +
 				"(MeterId,ActionType,ActionResult,ReadLogid,remark) " +
 				"select pid,?,?,?,? from Meter " +
-				"where gprsid = "+gprs.getPid()+" and MeterAddr = ? and valid = 1 ";
+				"where gprsid = "+gprs.getPid()+" and MeterAddr = ? and valid = 1 ;";
 		String SQL2 = "update Meter " +
-				"set meterstate = ?,readdata = ?,readtime = now() " +
+				"set meterstate = ?,readdata = ?,valvestate = ?,readtime = now() " +
 				"where gprsid = "+gprs.getPid()+" and MeterAddr = ? and valid = 1 ";
 		
 		Connection con = null;
 		ByteBuffer bf = ByteBuffer.allocate(4);
+		bf.order(ByteOrder.LITTLE_ENDIAN);
 		String meteraddr = "";
 		try {
 			con = DBPool.getConnection();
 			con.setAutoCommit(false);
 			PreparedStatement pstmt = null;
+			PreparedStatement pstmt2 = null;
 			
 			for(int i = 0;i < meters;i++){
 				
-				meterstatus = deal[i*14+1+12];
+				meterstatus = deal[i*14+1+3+12];
+				valvestatus = deal[i*14+1+3+12];
 				if(((meterstatus &0x40) ==0x40) && ((meterstatus &0x80)==0x80)){
 //					timeout
 					remark = meterstatus+"";
@@ -426,32 +430,48 @@ public class ReadMeterLogDao {
 //					normal
 					meterstatus = 1;
 				}
-				
-				for(int j = 0;j<7;j++){
-					meteraddr += String.format("%02x", deal[14*i + 1]&0xFF);
+				switch (valvestatus &0x03) {
+				case 0x00:
+					valvestatus = 1; //开
+					break;
+				case 0x01:
+					valvestatus = 0; //关
+					break;
+				case 0x03:
+					valvestatus = 2; //异常
+					break;
+				default:
+					break;
 				}
 				
-				bf.flip();
-				bf.put(deal, i*14+1+8, 4);
-				bf.order(ByteOrder.LITTLE_ENDIAN);
-				meterread = bf.getInt()/100;
+				for(int j = 0;j<7;j++){
+					meteraddr += String.format("%02x", deal[14*i + 1+3+j]&0xFF);
+				}
 				
+
+				
+				bf.put(deal, i*14+1+3+8, 4);
+				String readhexstr = Integer.toHexString(bf.getInt(0));  //get the int   turn the int to hex string
+				meterread = Integer.parseInt(readhexstr)/100;  //turn the readhexstr to the real read
+				bf.flip();
 				pstmt = con.prepareStatement(SQL);
 				pstmt.setInt(1, meterstatus);
 				pstmt.setInt(2, meterread);
 				pstmt.setInt(3, readlogid);
 				pstmt.setString(4, remark);
-				pstmt.setInt(5, i);
+				pstmt.setString(5, meteraddr);
 				pstmt.addBatch();
 				
-				pstmt = con.prepareStatement(SQL2);
-				pstmt.setInt(1, meterstatus);
-				pstmt.setInt(2, meterread);
-				pstmt.setInt(3, i);
-				pstmt.addBatch();
+				pstmt2 = con.prepareStatement(SQL2);
+				pstmt2.setInt(1, meterstatus);
+				pstmt2.setInt(2, meterread);
+				pstmt2.setInt(3, valvestatus);
+				pstmt2.setString(4, meteraddr);
+				pstmt2.addBatch();
 			}
 			
 			pstmt.executeBatch();
+			pstmt2.executeBatch();
 			con.commit();
 			
 		} catch (SQLException e) {
@@ -472,5 +492,4 @@ public class ReadMeterLogDao {
 		}
 		
 	}
-
 }

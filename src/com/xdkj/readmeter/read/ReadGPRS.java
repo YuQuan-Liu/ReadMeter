@@ -123,7 +123,7 @@ public class ReadGPRS extends Thread {
 							break;
 						}
 						if(cjqmeters == meters){
-//							dataToDB(gprs,col,deal);  TODO
+//							dataToDB(gprs,col,deal);  
 							ReadMeterLogDao.addReadMeterLogs(readlogid,gprs,col,deal);
 							normal += cjqmeters;
 							break;
@@ -218,18 +218,19 @@ public class ReadGPRS extends Thread {
 						if(Frame.checkFrame(Arrays.copyOf(deal, middle))){
 							Frame readdata = new Frame(Arrays.copyOf(deal, middle));
 							byte[] meterdata = readdata.getData();
-							meters -= (meterdata.length-1)/14;
+							int metercount = (meterdata.length-1-3)/14;
+							meters -= metercount;
 							//判断表的状态  看是否超时  
-							for(int i = 0;i < meters;i++){
-								byte state = meterdata[i*14+1+12];
+							for(int i = 0;i < metercount;i++){
+								byte state = meterdata[i*14+3+1+12];
 								if(((state &0x40) ==0x40) && ((state &0x80)==0x80)){
 									timeout++;
 								}else{
 									normal++;
 								}
 							}
-//							dataToDB(gprs,col,deal);  TODO
-							ReadMeterLogDao.addReadMeterLogs(readlogid,gprs,meters,deal);
+//							dataToDB(gprs,col,deal);  
+							ReadMeterLogDao.addReadMeterLogs(readlogid,gprs,metercount,meterdata);
 							
 							if(meters == 0){
 								break;

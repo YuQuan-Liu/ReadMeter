@@ -1,4 +1,4 @@
-package com.xdkj.readmeter;
+package com.xdkj.readmeter.test;
 
 import static org.junit.Assert.*;
 

@@ -76,12 +76,13 @@ public class ReadMeterLogDao {
 		
 		int meterread = -1;
 		byte meterstatus = 1;
+		byte valvestatus = 1;
 		String remark = "";
 		String SQL = "insert into ReadMeterLog " +
 				"(MeterId,ActionType,ActionResult,ReadLogid,remark) " +
 				"values(?,?,?,?,?)";
 		String SQL2 = "update Meter " +
-				"set meterstate = ?,readdata = ?,readtime = now() " +
+				"set meterstate = ?,readdata = ?,valvestate = ?,readtime = now() " +
 				"where pid = ?";
 		switch (gprs.getGprsprotocol()) {
 		case 1:
@@ -130,7 +131,8 @@ public class ReadMeterLogDao {
 						pstmt = con.prepareStatement(SQL2);
 						pstmt.setInt(1, meterstatus);
 						pstmt.setInt(2, meterread);
-						pstmt.setInt(3, readlogid);
+						pstmt.setInt(3, 0);
+						pstmt.setInt(4, mid);
 						pstmt.executeUpdate();
 						con.commit();
 						
@@ -157,11 +159,15 @@ public class ReadMeterLogDao {
 			}
 			break;
 		case 2:
-			meterstatus = data[13];
+			meterstatus = data[16];
+			valvestatus = data[16];
 			ByteBuffer bf = ByteBuffer.allocate(4);
-			bf.put(data, 9, 4);
+			bf.put(data, 12, 4);
 			bf.order(ByteOrder.LITTLE_ENDIAN);
-			meterread = bf.getInt()/100;
+			
+			String readhexstr = Integer.toHexString(bf.getInt(0));  //get the int   turn the int to hex string
+			meterread = Integer.parseInt(readhexstr)/100;  //turn the readhexstr to the real read
+			
 			if(((meterstatus &0x40) ==0x40) && ((meterstatus &0x80)==0x80)){
 //				timeout
 				remark = meterstatus+"";
@@ -169,6 +175,20 @@ public class ReadMeterLogDao {
 			}else{
 //				normal
 				meterstatus = 1;
+			}
+			
+			switch (valvestatus &0x03) {
+			case 0x00:
+				valvestatus = 1; //开
+				break;
+			case 0x01:
+				valvestatus = 0; //关
+				break;
+			case 0x03:
+				valvestatus = 2; //异常
+				break;
+			default:
+				break;
 			}
 			
 			Connection con = null;
@@ -186,7 +206,8 @@ public class ReadMeterLogDao {
 				pstmt = con.prepareStatement(SQL2);
 				pstmt.setInt(1, meterstatus);
 				pstmt.setInt(2, meterread);
-				pstmt.setInt(3, readlogid);
+				pstmt.setInt(3, valvestatus);
+				pstmt.setInt(4, mid);
 				pstmt.executeUpdate();
 				con.commit();
 				

@@ -33,6 +33,8 @@ public class ReadMeter extends Thread{
 		gprs = GPRSDao.getGPRSbyMID(mid);
 		meter = MeterDao.getMeterbyID(mid);
 		
+		System.out.println(gprs.getGprsprotocol()+"~~~");
+		
 		switch (gprs.getGprsprotocol()) {
 		case 1:
 			//EG
@@ -169,7 +171,7 @@ public class ReadMeter extends Thread{
 					byte[] framedata = new byte[11];
 					framedata[0] = 0x10;
 					for(int i= 1;i <= 7;i++){
-						framedata[i] = meteraddr[i];
+						framedata[i] = meteraddr[i-1];
 					}
 					framedata[8] = 0x00;
 					framedata[9] = 0x00;
@@ -234,4 +236,7 @@ public class ReadMeter extends Thread{
 		}
 	}
 	
+	public static void main(String[] args) {
+		new ReadMeter(1, 1).start();
+	}
 }

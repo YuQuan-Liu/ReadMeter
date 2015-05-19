@@ -86,7 +86,7 @@ public class ReadLogDao {
 		
 		String SQL = "update readlog " +
 				"set ReadStatus = 100,FailReason = ?,CompleteTime = now(),Result = ? " +
-				"where PID = ";
+				"where PID = ?";
 		
 		Connection con = null;
 		try {
@@ -115,7 +115,7 @@ public class ReadLogDao {
 		
 		String SQL = "update readlog " +
 				"set ReadStatus = 100,FailReason = ?,CompleteTime = now(),Result = ? " +
-				"where PID = ";
+				"where PID = ?";
 		
 		Connection con = null;
 		try {

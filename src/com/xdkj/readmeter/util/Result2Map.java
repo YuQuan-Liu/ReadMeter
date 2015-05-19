@@ -17,7 +17,7 @@ public class Result2Map {
 			String key = rsmd.getColumnLabel(i);
 			String value = rs.getString(i);
 			hm.put(key, value);
-			System.out.println(key+":"+value);
+//			System.out.println(key+":"+value);
 		}
 		return hm;
 	}

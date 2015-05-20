@@ -50,9 +50,8 @@ public class ReadLogDao {
 	public static List<Readlog> getAllNeighborReadlog(int adminid,int pid){
 		
 		String ip = Property.getValue("ip").trim();
-		
 		String SQL = "select pid,adminid,objectId,readType,remote,readObject,ip,readStatus,failReason,startTime,completeTime,settle,result from ReadLog " +
-				"where pid >= ? and adminid = ? and ip = "+ip;
+				"where pid >= ? and adminid = ? and ip = ? ";
 		
 		Connection con = null;
 		Readlog readlog = null;
@@ -62,6 +61,7 @@ public class ReadLogDao {
 			PreparedStatement pstmt = con.prepareStatement(SQL);
 			pstmt.setInt(1, pid);
 			pstmt.setInt(2, adminid);
+			pstmt.setString(3, ip);
 			
 			ResultSet rs = pstmt.executeQuery();
 			while(rs.next()){

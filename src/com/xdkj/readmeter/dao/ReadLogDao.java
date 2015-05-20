@@ -12,6 +12,7 @@ import org.apache.commons.beanutils.BeanUtils;
 
 import com.xdkj.readmeter.db.DBPool;
 import com.xdkj.readmeter.obj.Readlog;
+import com.xdkj.readmeter.util.Property;
 import com.xdkj.readmeter.util.Result2Map;
 
 public class ReadLogDao {
@@ -48,8 +49,10 @@ public class ReadLogDao {
 	
 	public static List<Readlog> getAllNeighborReadlog(int adminid,int pid){
 		
+		String ip = Property.getValue("ip").trim();
+		
 		String SQL = "select pid,adminid,objectId,readType,remote,readObject,ip,readStatus,failReason,startTime,completeTime,settle,result from ReadLog " +
-				"where pid >= ? and adminid = ? ";
+				"where pid >= ? and adminid = ? and ip = "+ip;
 		
 		Connection con = null;
 		Readlog readlog = null;

@@ -24,7 +24,7 @@ public class ReadNeighbors extends Thread{
 		Readlog readlog = null;
 		for(int i = 0;null != list && i < list.size();i++){
 			readlog = list.get(i);
-			readNeighbor = new ReadNeighbor(readlog.getObjectId(), readlogid);
+			readNeighbor = new ReadNeighbor(readlog.getObjectId(), readlog.getPid());
 			readNeighbor.start();
 		}
 		

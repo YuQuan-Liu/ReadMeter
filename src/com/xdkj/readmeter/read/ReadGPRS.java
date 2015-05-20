@@ -131,6 +131,7 @@ public class ReadGPRS extends Thread {
 					}
 				}
 				result.put("success", "true");
+				result.put("error", "");
 			}else{
 				result.put("success", "false");
 				result.put("error", res);

@@ -24,6 +24,7 @@ public class DBPool {
 			cpds.setAcquireIncrement(5);
 			cpds.setMaxPoolSize(20);
 			cpds.setMaxStatements(180);
+			cpds.setMaxIdleTime(60);
 			
 		} catch (PropertyVetoException e) {
 			e.printStackTrace();

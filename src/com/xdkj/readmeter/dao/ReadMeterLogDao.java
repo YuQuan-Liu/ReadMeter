@@ -181,7 +181,7 @@ public class ReadMeterLogDao {
 			case 0x00:
 				valvestatus = 1; //开
 				break;
-			case 0x01:
+			case 0x02:
 				valvestatus = 0; //关
 				break;
 			case 0x03:
@@ -313,6 +313,7 @@ public class ReadMeterLogDao {
 			con = DBPool.getConnection();
 			con.setAutoCommit(false);
 			PreparedStatement pstmt = null;
+			PreparedStatement pstmt2 = null;
 			
 			for(int i = 0;i < col.getMeterNums();i++){
 				
@@ -354,11 +355,11 @@ public class ReadMeterLogDao {
 						pstmt.setInt(5, i);
 						pstmt.addBatch();
 						
-						pstmt = con.prepareStatement(SQL2);
-						pstmt.setInt(1, meterstatus);
-						pstmt.setInt(2, meterread);
-						pstmt.setInt(3, i);
-						pstmt.addBatch();
+						pstmt2 = con.prepareStatement(SQL2);
+						pstmt2.setInt(1, meterstatus);
+						pstmt2.setInt(2, meterread);
+						pstmt2.setInt(3, i);
+						pstmt2.addBatch();
 						
 					}else{
 						//error != 0 give up
@@ -367,6 +368,7 @@ public class ReadMeterLogDao {
 			}
 			
 			pstmt.executeBatch();
+			pstmt2.executeBatch();
 			con.commit();
 			
 		} catch (SQLException e) {
@@ -434,7 +436,7 @@ public class ReadMeterLogDao {
 				case 0x00:
 					valvestatus = 1; //开
 					break;
-				case 0x01:
+				case 0x02:
 					valvestatus = 0; //关
 					break;
 				case 0x03:

@@ -64,16 +64,36 @@ public class ValveConfLogDao {
 				"set result = ?,errorReason =?,errorstatus = 0,completetime = now() " +
 				"where pid = ?";
 		
+		String SQL2 = "update Meter " +
+				"set valvestate = ? " +
+				"where pid = "+valveConfLog.getMeterid();
 		Connection con = null;
 		try {
 			con = DBPool.getConnection();
+			con.setAutoCommit(false);
 			PreparedStatement pstmt = con.prepareStatement(SQL);
 			pstmt.setInt(1, finished?1:2);
 			pstmt.setString(2, reason);
 			pstmt.setInt(3, valveConfLog.getPid());
 			
 			pstmt.executeUpdate();
+			
+			pstmt = con.prepareStatement(SQL2);
+			if(finished){
+				pstmt.setInt(1, valveConfLog.getSwitchaction());
+			}else{
+				pstmt.setInt(1, 2);
+			}
+			
+			pstmt.executeUpdate();
+			
+			con.commit();
 		} catch (Exception e) {
+			try {
+				con.rollback();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
 			e.printStackTrace();
 		} finally{
 			if(con != null){

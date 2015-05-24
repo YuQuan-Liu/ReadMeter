@@ -240,6 +240,7 @@ public class ReadGPRS extends Thread {
 						}
 					}
 					result.put("success", "true");
+					result.put("error", "");
 				}else{
 					//offline
 					result.put("success", "false");

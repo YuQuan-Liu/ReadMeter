@@ -105,4 +105,38 @@ public class ValveConfLogDao {
 			}
 		}
 	}
+
+	public static void addValveConfLogs(List<Integer> list,int valvelogid) {
+		
+		String SQL = "insert into valveconflog " +
+				"(meterid,switch,result,errorreason,errorstatus,removereason,valvelogid) " +
+				"values(?,0,0,'',0,'',"+valvelogid+")";
+		
+		Connection con = null;
+		try {
+			con = DBPool.getConnection();
+			con.setAutoCommit(false);
+			
+			PreparedStatement pstmt = con.prepareStatement(SQL);
+			
+			for(int i=0;i <list.size();i++){
+				pstmt.setInt(1, list.get(i));
+				pstmt.addBatch();
+			}
+			
+			pstmt.executeBatch();
+			
+			con.commit();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally{
+			if(con != null){
+				try {
+					con.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 }

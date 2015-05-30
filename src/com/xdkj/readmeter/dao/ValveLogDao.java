@@ -72,4 +72,46 @@ public class ValveLogDao {
 		}
 		
 	}
+
+	public static int addValveLog(int adid, int count) {
+		String SQL = "insert into valvelog " +
+				"(adminid,actiontime,auto,actioncount,completecount,errorcount,status,failreason,remark) " +
+				"values(?,now(),1,?,0,0,0,'','')";
+		
+		String SQL1 = "select max(pid) from valvelog " +
+				"where adminid = ? and auto = 1 and status = 0 and actioncount = ?";
+		int valvelogid = 0;
+		Connection con = null;
+		try {
+			con = DBPool.getConnection();
+			con.setAutoCommit(false);
+			
+			PreparedStatement pstmt = con.prepareStatement(SQL);
+			pstmt.setInt(1, adid);
+			pstmt.setInt(2, count);
+			
+			pstmt.executeUpdate();
+			
+			pstmt = con.prepareStatement(SQL1);
+			pstmt.setInt(1, adid);
+			pstmt.setInt(2, count);
+			ResultSet rs = pstmt.executeQuery();
+			while(rs.next()){
+				valvelogid = rs.getInt(1);
+			}
+			con.commit();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally{
+			if(con != null){
+				try {
+					con.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return valvelogid;
+		
+	}
 }

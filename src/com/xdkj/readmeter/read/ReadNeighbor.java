@@ -50,6 +50,9 @@ public class ReadNeighbor extends Thread{
 		//get the result from the results the key is the gprsaddr the value is a map (which contains the result of the gprs)
 		//
 		
+		//统计当前小区的水损
+		
+		
 		Readlog readlog = ReadLogDao.getByID(readlogid);
 		//结算阀控需要自动扣费的表具
 		MeterDeductionDao.calculate(nid,readlog.getAdminid(),readlog.getPid());

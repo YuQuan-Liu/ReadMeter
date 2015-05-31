@@ -2,6 +2,7 @@ package com.xdkj.readmeter.dao;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -21,29 +22,20 @@ public class ReadMeterLogDao {
 	public static void addBreakdown(int readlogid, GPRS gprs, int mid) {
 		
 		//更新表的
-		String SQL = "insert into ReadMeterLog " +
-				"(MeterId,ActionType,ActionResult,ReadLogid,remark) " +
-				"values(?,?,?,?,'')";
-		String SQL2 = "update Meter " +
-				"set meterstate = ?,readdata = ?,readtime = now() " +
-				"where pid = ?";
-		
 		Connection con = null;
 		try {
 			con = DBPool.getConnection();
 			con.setAutoCommit(false);
-			PreparedStatement pstmt = con.prepareStatement(SQL);
-			pstmt.setInt(1, mid);
-			pstmt.setInt(2, 4);
-			pstmt.setInt(3, -1);
-			pstmt.setInt(4, readlogid);
 			
-			pstmt.executeUpdate();
-			pstmt = con.prepareStatement(SQL2);
-			pstmt.setInt(1, 4);
-			pstmt.setInt(2, -1);
-			pstmt.setInt(3, readlogid);
-			pstmt.executeUpdate();
+			CallableStatement call = con.prepareCall("{call addreadmeterlog(?,?,?,?,?,?)}");
+			call.setInt(1, mid);
+			call.setInt(2, 4);  //actiontype
+			call.setInt(3, -1);	//meterread
+			call.setInt(4, 1);	//valvestate
+			call.setInt(5, readlogid);  //readlogid
+			call.setString(6, "");  //remark
+			call.executeUpdate();
+			
 			con.commit();
 			
 		} catch (SQLException e) {
@@ -78,12 +70,8 @@ public class ReadMeterLogDao {
 		byte meterstatus = 1;
 		byte valvestatus = 1;
 		String remark = "";
-		String SQL = "insert into ReadMeterLog " +
-				"(MeterId,ActionType,ActionResult,ReadLogid,remark) " +
-				"values(?,?,?,?,?)";
-		String SQL2 = "update Meter " +
-				"set meterstate = ?,readdata = ?,valvestate = ?,readtime = now() " +
-				"where pid = ?";
+		boolean add = false;
+		
 		switch (gprs.getGprsprotocol()) {
 		case 1:
 			if(data[0] == 0x0e && data[1] == 0x0d && data[2] == 0x0c){
@@ -115,44 +103,7 @@ public class ReadMeterLogDao {
 							}
 						}
 					}
-					
-					Connection con = null;
-					try {
-						con = DBPool.getConnection();
-						con.setAutoCommit(false);
-						PreparedStatement pstmt = con.prepareStatement(SQL);
-						pstmt.setInt(1, mid);
-						pstmt.setInt(2, meterstatus);
-						pstmt.setInt(3, meterread);
-						pstmt.setInt(4, readlogid);
-						pstmt.setString(5, remark);
-						
-						pstmt.executeUpdate();
-						pstmt = con.prepareStatement(SQL2);
-						pstmt.setInt(1, meterstatus);
-						pstmt.setInt(2, meterread);
-						pstmt.setInt(3, 0);
-						pstmt.setInt(4, mid);
-						pstmt.executeUpdate();
-						con.commit();
-						
-					} catch (SQLException e) {
-						try {
-							con.rollback();
-						} catch (SQLException e1) {
-							e1.printStackTrace();
-						}
-						e.printStackTrace();
-					} finally{
-						if(con != null){
-							try {
-								con.close();
-							} catch (SQLException e) {
-								e.printStackTrace();
-							}
-						}
-					}
-					
+					add = true;
 				}else{
 					//error != 0 give up
 				}
@@ -190,25 +141,25 @@ public class ReadMeterLogDao {
 			default:
 				break;
 			}
-			
+			add = true;
+			break;
+		default:
+			break;
+		}
+		if(add){
 			Connection con = null;
 			try {
 				con = DBPool.getConnection();
 				con.setAutoCommit(false);
-				PreparedStatement pstmt = con.prepareStatement(SQL);
-				pstmt.setInt(1, mid);
-				pstmt.setInt(2, meterstatus);
-				pstmt.setInt(3, meterread);
-				pstmt.setInt(4, readlogid);
-				pstmt.setString(5, remark);
+				CallableStatement call = con.prepareCall("{call addreadmeterlog(?,?,?,?,?,?)}");
+				call.setInt(1, mid);
+				call.setInt(2, meterstatus);  //actiontype
+				call.setInt(3, meterread);	//meterread
+				call.setInt(4, valvestatus);	//valvestate
+				call.setInt(5, readlogid);  //readlogid
+				call.setString(6, remark);  //remark
+				call.executeUpdate();
 				
-				pstmt.executeUpdate();
-				pstmt = con.prepareStatement(SQL2);
-				pstmt.setInt(1, meterstatus);
-				pstmt.setInt(2, meterread);
-				pstmt.setInt(3, valvestatus);
-				pstmt.setInt(4, mid);
-				pstmt.executeUpdate();
 				con.commit();
 				
 			} catch (SQLException e) {
@@ -227,47 +178,29 @@ public class ReadMeterLogDao {
 					}
 				}
 			}
-			break;
-		default:
-			break;
 		}
 		
 	}
 
 	public static void addBreakdown(int readlogid, GPRS gprs, Collector col) {
 		
-		String SQL = "insert into ReadMeterLog " +
-				"(MeterId,ActionType,ActionResult,ReadLogid,remark) " +
-				"select pid,?,?,?,? from Meter " +
-				"where gprsid = "+gprs.getPid()+" and CollectorAddr = "+col.getColAddr()+" and MeterAddr = ? and valid = 1 ";
-		String SQL2 = "update Meter " +
-				"set meterstate = ?,readdata = ?,readtime = now() " +
-				"where gprsid = "+gprs.getPid()+" and CollectorAddr = "+col.getColAddr()+" and MeterAddr = ? and valid = 1 ";
-		
 		Connection con = null;
 		try {
 			con = DBPool.getConnection();
 			con.setAutoCommit(false);
-			PreparedStatement pstmt = null;
+			CallableStatement call = con.prepareCall("{call addbreakdowns(?,?,?,?)}");
 			
 			for(int i = 0;i < col.getMeterNums();i++){
-				pstmt = con.prepareStatement(SQL);
-				pstmt.setInt(1, 4);
-				pstmt.setInt(2, -1);
-				pstmt.setInt(3, readlogid);
-				pstmt.setString(4, "");
-				pstmt.setInt(5, i);
-				pstmt.addBatch();
 				
-				pstmt = con.prepareStatement(SQL2);
-				pstmt.setInt(1, 4);
-				pstmt.setInt(2, -1);
-				pstmt.setInt(3, i);
-				pstmt.addBatch();
 				
+				call.setInt(1, readlogid);
+				call.setInt(2, gprs.getPid());  //
+				call.setInt(3, col.getColAddr());	//
+				call.setInt(4, i+1);	//
+				call.addBatch();
 			}
 			
-			pstmt.executeBatch();
+			call.executeBatch();
 			con.commit();
 			
 		} catch (SQLException e) {
@@ -298,22 +231,15 @@ public class ReadMeterLogDao {
 	public static void addReadMeterLogs(int readlogid, GPRS gprs,
 			Collector col, byte[] deal) {
 		int meterread = -1;
+		int meteraddr = 1;
 		byte meterstatus = 1;
 		String remark = "";
-		String SQL = "insert into ReadMeterLog " +
-				"(MeterId,ActionType,ActionResult,ReadLogid,remark) " +
-				"select pid,?,?,?,? from Meter " +
-				"where gprsid = "+gprs.getPid()+" and CollectorAddr = "+col.getColAddr()+" and MeterAddr = ? and valid = 1 ";
-		String SQL2 = "update Meter " +
-				"set meterstate = ?,readdata = ?,readtime = now() " +
-				"where gprsid = "+gprs.getPid()+" and CollectorAddr = "+col.getColAddr()+" and MeterAddr = ? and valid = 1 ";
-		
 		Connection con = null;
 		try {
 			con = DBPool.getConnection();
 			con.setAutoCommit(false);
-			PreparedStatement pstmt = null;
-			PreparedStatement pstmt2 = null;
+			
+			CallableStatement call = con.prepareCall("{call addreadmeterlogs(?,?,?,?,?,?,?,?)}");
 			
 			for(int i = 0;i < col.getMeterNums();i++){
 				
@@ -322,9 +248,10 @@ public class ReadMeterLogDao {
 							deal[10 * i + 3] ^ deal[10 * i + 4] ^ deal[10 * i + 5] ^ 
 							deal[10 * i + 6] ^ deal[10 * i + 7] ^ deal[10 * i + 8] ^ deal[10 * i + 9];
 					if(error == 0){
-						meterread = deal[7]&0xFF;
+						meteraddr = deal[10 * i + 4]&0xFF;
+						meterread = deal[10 * i + 7]&0xFF;
 						meterread = meterread << 8;
-						meterread = meterread|(deal[8]&0xFF);
+						meterread = meterread|(deal[10 * i + 8]&0xFF);
 						String numstr = Integer.toHexString(meterread);
 						if(numstr.equals("aaaa")){
 							meterread = -1;
@@ -347,19 +274,17 @@ public class ReadMeterLogDao {
 							}
 						}
 						
-						pstmt = con.prepareStatement(SQL);
-						pstmt.setInt(1, meterstatus);
-						pstmt.setInt(2, meterread);
-						pstmt.setInt(3, readlogid);
-						pstmt.setString(4, remark);
-						pstmt.setInt(5, i);
-						pstmt.addBatch();
+						call.setInt(1, readlogid);
+						call.setInt(2, gprs.getPid());  //
+						call.setInt(3, col.getColAddr());	//
+						call.setInt(4, meteraddr);	//
 						
-						pstmt2 = con.prepareStatement(SQL2);
-						pstmt2.setInt(1, meterstatus);
-						pstmt2.setInt(2, meterread);
-						pstmt2.setInt(3, i);
-						pstmt2.addBatch();
+						call.setInt(5, meterstatus);
+						call.setInt(6, meterread);  //
+						call.setInt(7, 1);	//
+						call.setString(8, remark);	//
+						
+						call.addBatch();
 						
 					}else{
 						//error != 0 give up
@@ -367,8 +292,7 @@ public class ReadMeterLogDao {
 				}
 			}
 			
-			pstmt.executeBatch();
-			pstmt2.executeBatch();
+			call.executeBatch();
 			con.commit();
 			
 		} catch (SQLException e) {
@@ -402,13 +326,6 @@ public class ReadMeterLogDao {
 		byte meterstatus = 1;
 		byte valvestatus = 1;
 		String remark = "";
-		String SQL = "insert into ReadMeterLog " +
-				"(MeterId,ActionType,ActionResult,ReadLogid,remark) " +
-				"select pid,?,?,?,? from Meter " +
-				"where gprsid = "+gprs.getPid()+" and MeterAddr = ? and valid = 1 ;";
-		String SQL2 = "update Meter " +
-				"set meterstate = ?,readdata = ?,valvestate = ?,readtime = now() " +
-				"where gprsid = "+gprs.getPid()+" and MeterAddr = ? and valid = 1 ";
 		
 		Connection con = null;
 		ByteBuffer bf = ByteBuffer.allocate(4);
@@ -417,8 +334,7 @@ public class ReadMeterLogDao {
 		try {
 			con = DBPool.getConnection();
 			con.setAutoCommit(false);
-			PreparedStatement pstmt = null;
-			PreparedStatement pstmt2 = null;
+			CallableStatement call = con.prepareCall("{call addreadmeterlogsnational(?,?,?,?,?,?,?)}");
 			
 			for(int i = 0;i < meters;i++){
 				
@@ -456,24 +372,19 @@ public class ReadMeterLogDao {
 				String readhexstr = Integer.toHexString(bf.getInt(0));  //get the int   turn the int to hex string
 				meterread = Integer.parseInt(readhexstr)/100;  //turn the readhexstr to the real read
 				bf.flip();
-				pstmt = con.prepareStatement(SQL);
-				pstmt.setInt(1, meterstatus);
-				pstmt.setInt(2, meterread);
-				pstmt.setInt(3, readlogid);
-				pstmt.setString(4, remark);
-				pstmt.setString(5, meteraddr);
-				pstmt.addBatch();
+				call.setInt(1, readlogid);
+				call.setInt(2, gprs.getPid());  //
+				call.setString(3, meteraddr);	//
 				
-				pstmt2 = con.prepareStatement(SQL2);
-				pstmt2.setInt(1, meterstatus);
-				pstmt2.setInt(2, meterread);
-				pstmt2.setInt(3, valvestatus);
-				pstmt2.setString(4, meteraddr);
-				pstmt2.addBatch();
+				call.setInt(4, meterstatus);
+				call.setInt(5, meterread);  //
+				call.setInt(6, valvestatus);	//
+				call.setString(7, remark);	//
+				
+				call.addBatch();
 			}
 			
-			pstmt.executeBatch();
-			pstmt2.executeBatch();
+			call.executeBatch();
 			con.commit();
 			
 		} catch (SQLException e) {

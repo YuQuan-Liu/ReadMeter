@@ -16,14 +16,17 @@ import com.xdkj.readmeter.dao.MeterDeductionDao;
 import com.xdkj.readmeter.dao.ReadMeterLogDao;
 import com.xdkj.readmeter.dao.ValveConfLogDao;
 import com.xdkj.readmeter.dao.ValveLogDao;
+import com.xdkj.readmeter.dao.WasteLogDao;
 import com.xdkj.readmeter.db.DBPool;
 import com.xdkj.readmeter.obj.Collector;
 import com.xdkj.readmeter.obj.CustomerWarn;
 import com.xdkj.readmeter.obj.GPRS;
 import com.xdkj.readmeter.obj.Valvelog;
+import com.xdkj.readmeter.obj.WasteLog;
 import com.xdkj.readmeter.read.ReadMeter;
 import com.xdkj.readmeter.read.ValveControl;
 import com.xdkj.readmeter.read.WarnSender;
+import com.xdkj.readmeter.read.WasteStatistic;
 
 public class TestMeter {
 
@@ -116,7 +119,12 @@ public class TestMeter {
 		}
 	}
 	
-	
+
+	@Test
+	public void teststatistic() throws Exception {
+		List<WasteLog> wastelogs = WasteLogDao.wasteStatistics(1, 96);
+		WasteStatistic.statistic(wastelogs,1,96);
+	}
 	
 	
 	

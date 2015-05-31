@@ -10,9 +10,11 @@ import java.util.concurrent.CountDownLatch;
 import com.xdkj.readmeter.dao.GPRSDao;
 import com.xdkj.readmeter.dao.MeterDeductionDao;
 import com.xdkj.readmeter.dao.ReadLogDao;
+import com.xdkj.readmeter.dao.WasteLogDao;
 import com.xdkj.readmeter.obj.CustomerWarn;
 import com.xdkj.readmeter.obj.GPRS;
 import com.xdkj.readmeter.obj.Readlog;
+import com.xdkj.readmeter.obj.WasteLog;
 
 public class ReadNeighbor extends Thread{
 	
@@ -51,7 +53,8 @@ public class ReadNeighbor extends Thread{
 		//
 		
 		//统计当前小区的水损
-		
+		List<WasteLog> wastelogs = WasteLogDao.wasteStatistics(nid, readlogid);
+		WasteStatistic.statistic(wastelogs,nid,readlogid);
 		
 		Readlog readlog = ReadLogDao.getByID(readlogid);
 		//结算阀控需要自动扣费的表具

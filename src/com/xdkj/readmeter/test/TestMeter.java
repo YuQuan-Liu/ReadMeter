@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Test;
@@ -127,8 +128,26 @@ public class TestMeter {
 	}
 	
 	
-	
-	
+	@Test
+	public void testarraytoStr() throws Exception {
+		byte[] deal = new byte[10];
+		deal[0]= 0x0E;
+		deal[1]= 0x0D;
+		deal[2]= 0x0C;
+		deal[3]= 0x0E;
+		deal[4]= 0x01;
+		deal[5]= 0x0E;
+		deal[6]= 0x0E;
+		deal[7]= 0x01;
+		deal[8]= 0x01;
+		deal[9]= 0x00;
+		
+		String x = Arrays.toString(deal);
+		
+		System.out.println(x);;
+		
+		System.out.println(x.substring(1, x.length()-1));
+	}
 	
 	
 	

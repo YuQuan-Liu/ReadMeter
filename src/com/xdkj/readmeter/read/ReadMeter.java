@@ -152,7 +152,7 @@ public class ReadMeter extends Thread{
 			s.setSoTimeout(30*1000);  //30s
 			out = s.getOutputStream();
 			in = s.getInputStream();
-			byte[] gprsaddr = StringUtil.string2Byte(gprs.getGprsaddr());
+			byte[] gprsaddr = StringUtil.string2Byte(new StringBuilder(gprs.getGprsaddr()).reverse().toString());
 			
 			Frame login = new Frame(0, (byte)(Frame.ZERO | Frame.PRM_MASTER |Frame.PRM_M_LINE), 
 					Frame.AFN_LOGIN, (byte)(Frame.ZERO|Frame.SEQ_FIN|Frame.SEQ_FIR), 
@@ -166,7 +166,7 @@ public class ReadMeter extends Thread{
 				Frame login_result = new Frame(Arrays.copyOf(data, count));
 				if(login_result.getFn() == 0x01){
 					//online
-					byte[] meteraddr = StringUtil.string2Byte(meter.getMeterAddr());
+					byte[] meteraddr = StringUtil.string2Byte(new StringBuilder(meter.getMeterAddr()).reverse().toString());
 					//the data in the frame
 					byte[] framedata = new byte[11];
 					framedata[0] = 0x10;

@@ -3,7 +3,13 @@ package com.xdkj.readmeter.test;
 import static org.junit.Assert.*;
 
 import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Test;
 
 import com.xdkj.readmeter.util.StringUtil;
@@ -45,4 +51,36 @@ public class TestString {
 		
 	}
 
+	
+	@Test
+	public void testsplit() {
+		String[] x = "".split(",");
+		System.out.println(x.length);
+		 x = "11".split(",");
+		System.out.println(x.length);
+
+	}
+	
+	
+	@Test
+	public void testday() {
+		List<String> list = new ArrayList<>();
+		for(int i = 1;i <32;i++){
+			list.add(i+"");
+		}
+//		["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31"]
+		System.out.println(new JSONArray(list).toString());;
+
+	}
+	
+	@Test
+	public void testday2() {
+		List<Integer> list = new ArrayList<>();
+		for(int i = 1;i <32;i++){
+			list.add(0);
+		}
+//		["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31"]
+		System.out.println(new JSONArray(list).toString());;
+
+	}
 }

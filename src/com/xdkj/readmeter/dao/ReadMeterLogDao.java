@@ -374,7 +374,7 @@ public class ReadMeterLogDao {
 				bf.flip();
 				call.setInt(1, readlogid);
 				call.setInt(2, gprs.getPid());  //
-				call.setString(3, meteraddr);	//
+				call.setString(3, new StringBuilder(meteraddr).reverse().toString());	//
 				
 				call.setInt(4, meterstatus);
 				call.setInt(5, meterread);  //

@@ -175,7 +175,7 @@ public class ReadGPRS extends Thread {
 			s.setSoTimeout(10*60*1000);  //10min
 			out = s.getOutputStream();
 			in = s.getInputStream();
-			byte[] gprsaddr = StringUtil.string2Byte(new StringBuilder(gprs.getGprsaddr()).reverse().toString());
+			byte[] gprsaddr = StringUtil.string2Byte(gprs.getGprsaddr());
 			
 			Frame login = new Frame(0, (byte)(Frame.ZERO | Frame.PRM_MASTER |Frame.PRM_M_LINE), 
 					Frame.AFN_LOGIN, (byte)(Frame.ZERO|Frame.SEQ_FIN|Frame.SEQ_FIR), 

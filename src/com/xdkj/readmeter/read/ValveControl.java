@@ -72,7 +72,7 @@ public class ValveControl extends Thread{
 					byte[] framedata = new byte[10];
 					framedata[0] = 0x10;
 					for(int i= 1;i <= 7;i++){
-						framedata[i] = meteraddr[i-1];
+						framedata[i] = meteraddr[6-(i-1)];
 					}
 					framedata[8] = 0x00;
 					framedata[9] = 0x00;

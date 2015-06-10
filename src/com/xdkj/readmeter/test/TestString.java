@@ -83,4 +83,14 @@ public class TestString {
 		System.out.println(new JSONArray(list).toString());;
 
 	}
+	
+	@Test
+	public void testtobyte() throws Exception {
+		System.out.println(new StringBuilder("55550000000001").reverse().toString());
+		byte[] bb = StringUtil.string2Byte(new StringBuilder("55550000000001").reverse().toString());
+		for(int i = 0;i < bb.length;i++){
+			System.out.println(bb[i]);
+		}
+	}
+	
 }

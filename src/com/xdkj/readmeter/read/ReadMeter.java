@@ -33,7 +33,7 @@ public class ReadMeter extends Thread{
 		gprs = GPRSDao.getGPRSbyMID(mid);
 		meter = MeterDao.getMeterbyID(mid);
 		
-		System.out.println(gprs.getGprsprotocol()+"~~~");
+//		System.out.println(gprs.getGprsprotocol()+"~~~");
 		
 		switch (gprs.getGprsprotocol()) {
 		case 1:
@@ -152,7 +152,7 @@ public class ReadMeter extends Thread{
 			s.setSoTimeout(30*1000);  //30s
 			out = s.getOutputStream();
 			in = s.getInputStream();
-			byte[] gprsaddr = StringUtil.string2Byte(new StringBuilder(gprs.getGprsaddr()).reverse().toString());
+			byte[] gprsaddr = StringUtil.string2Byte(gprs.getGprsaddr());
 			
 			Frame login = new Frame(0, (byte)(Frame.ZERO | Frame.PRM_MASTER |Frame.PRM_M_LINE), 
 					Frame.AFN_LOGIN, (byte)(Frame.ZERO|Frame.SEQ_FIN|Frame.SEQ_FIR), 
@@ -166,12 +166,12 @@ public class ReadMeter extends Thread{
 				Frame login_result = new Frame(Arrays.copyOf(data, count));
 				if(login_result.getFn() == 0x01){
 					//online
-					byte[] meteraddr = StringUtil.string2Byte(new StringBuilder(meter.getMeterAddr()).reverse().toString());
+					byte[] meteraddr = StringUtil.string2Byte(meter.getMeterAddr());
 					//the data in the frame
 					byte[] framedata = new byte[11];
 					framedata[0] = 0x10;
 					for(int i= 1;i <= 7;i++){
-						framedata[i] = meteraddr[i-1];
+						framedata[i] = meteraddr[6-(i-1)];
 					}
 					framedata[8] = 0x00;
 					framedata[9] = 0x00;

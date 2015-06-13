@@ -3,7 +3,11 @@ package com.xdkj.readmeter.test;
 import static org.junit.Assert.*;
 
 import java.lang.reflect.Array;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,4 +97,22 @@ public class TestString {
 		}
 	}
 	
+	@Test
+	public void testdata() throws ParseException {
+		// TODO Auto-generated method stub
+//		"2015-06-13 08:10:00.0";
+		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		System.out.println("2015-06-13");
+		
+		System.out.println(df.parse("2015-06-13 08:10:00.0"));
+//		System.out.println(df.parse("2015-06-13").toString());
+//		System.out.println(new Date("2014-06-13"));
+		
+		Date d = df.parse("2015-06-13 08:10:00");
+		System.out.println(df.format(d));
+		
+		System.out.println(df.format(new Date()));
+		
+		
+	}
 }

@@ -108,6 +108,7 @@ public class ReadGPRS extends Thread {
 						middle = middle + count;
 						
 						int meters = (middle)/10;
+//						System.out.println("cjqmeters"+cjqmeters+"meters:"+meters);
 						
 						if(count == 9 && (new String(data,0,count)).contains("BREAKDOWN")){
 //							breakdown(gprs,col); 
@@ -120,12 +121,14 @@ public class ReadGPRS extends Thread {
 							}
 							result.put("breakdown", breakdown);
 							timeout += timeout;
+							middle = 0;
 							break;
 						}
 						if(cjqmeters == meters){
 //							dataToDB(gprs,col,deal);  
 							ReadMeterLogDao.addReadMeterLogs(readlogid,gprs,col,deal);
 							normal += cjqmeters;
+							middle = 0;
 							break;
 						}
 					}

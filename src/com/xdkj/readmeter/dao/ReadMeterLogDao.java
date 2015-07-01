@@ -94,6 +94,7 @@ public class ReadMeterLogDao {
 							remark = "bbbb";
 						}else{
 							meterstatus = 1;
+							remark = "";
 							try {
 								meterread = Integer.valueOf(numstr);
 							} catch (NumberFormatException e) {
@@ -264,6 +265,7 @@ public class ReadMeterLogDao {
 								remark = "bbbb";
 							}else{
 								meterstatus = 1;
+								remark = "";
 								try {
 									meterread = Integer.valueOf(numstr);
 								} catch (NumberFormatException e) {
@@ -346,6 +348,7 @@ public class ReadMeterLogDao {
 					meterstatus = 4;
 				}else{
 //					normal
+					remark = "";
 					meterstatus = 1;
 				}
 				switch (valvestatus &0x03) {
@@ -363,13 +366,20 @@ public class ReadMeterLogDao {
 				}
 				
 				for(int j = 0;j<7;j++){
-					meteraddr += String.format("%02x", deal[14*i + 1+3+j]&0xFF);
+					
+					meteraddr += new StringBuilder(String.format("%02x", deal[14*i + 1+3+j]&0xFF)).reverse().toString();
+					
 				}
 				
 				bf.put(deal, i*14+1+3+8, 4);
 				String readhexstr = Integer.toHexString(bf.getInt(0));  //get the int   turn the int to hex string
 				meterread = Integer.parseInt(readhexstr)/100;  //turn the readhexstr to the real read
 				bf.flip();
+				
+//				System.out.println("readlogid:"+readlogid+"gprsid:"+gprs.getPid()+"addr:"+new StringBuilder(meteraddr).reverse().toString()
+//						+"meterstatus"+meterstatus+"meterread:"+meterread+"valvestatus"+valvestatus+"remark:"+remark);
+				
+				
 				call.setInt(1, readlogid);
 				call.setInt(2, gprs.getPid());  //
 				call.setString(3, new StringBuilder(meteraddr).reverse().toString());	//

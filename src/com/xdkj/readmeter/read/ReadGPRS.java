@@ -224,6 +224,7 @@ public class ReadGPRS extends Thread {
 							byte[] meterdata = readdata.getData();
 							int metercount = (meterdata.length-1-3)/14;
 							meters -= metercount;
+							
 							//判断表的状态  看是否超时  
 							for(int i = 0;i < metercount;i++){
 								byte state = meterdata[i*14+3+1+12];
@@ -236,7 +237,7 @@ public class ReadGPRS extends Thread {
 //							dataToDB(gprs,col,deal);  
 							ReadMeterLogDao.addReadMeterLogs(readlogid,gprs,metercount,meterdata);
 							
-							if(meters == 0){
+							if(meters <= 0){
 								break;
 							}
 							middle = 0;

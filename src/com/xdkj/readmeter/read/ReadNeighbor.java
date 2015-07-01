@@ -80,8 +80,8 @@ public class ReadNeighbor extends Thread{
 //			if(resultmap.get("success").equals("true")){
 //				result += 
 //			}
-			result = result + key+":"+resultmap.get("result");
-			reason = reason + key+":"+resultmap.get("error");
+			result = result +"<br/>"+ key+":"+resultmap.get("result");
+			reason = reason +"<br/>"+ key+":"+resultmap.get("error");
 		}
 		ReadLogDao.updateReadLog(readlogid,result,reason);
 	}

@@ -337,7 +337,7 @@ public class ReadMeterLogDao {
 			CallableStatement call = con.prepareCall("{call addreadmeterlogsnational(?,?,?,?,?,?,?)}");
 			
 			for(int i = 0;i < meters;i++){
-				
+				meteraddr = "";
 				meterstatus = deal[i*14+1+3+12];
 				valvestatus = deal[i*14+1+3+12];
 				if((meterstatus &0x40) ==0x40){
@@ -365,8 +365,6 @@ public class ReadMeterLogDao {
 				for(int j = 0;j<7;j++){
 					meteraddr += String.format("%02x", deal[14*i + 1+3+j]&0xFF);
 				}
-				
-
 				
 				bf.put(deal, i*14+1+3+8, 4);
 				String readhexstr = Integer.toHexString(bf.getInt(0));  //get the int   turn the int to hex string

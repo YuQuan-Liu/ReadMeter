@@ -145,6 +145,7 @@ public class ReadGPRS extends Thread {
 					} catch(SocketTimeoutException se){
 						//*号采集器timer out.
 						cjqtimerout = cjqtimerout + col.getColAddr()+" ";
+						middle = 0;
 					}
 					
 				}

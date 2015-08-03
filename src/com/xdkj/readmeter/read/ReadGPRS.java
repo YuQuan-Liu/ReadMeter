@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -12,7 +13,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 
 
-import com.xdkj.readmeter.dao.GPRSDao;
 import com.xdkj.readmeter.dao.MeterDao;
 import com.xdkj.readmeter.dao.ReadMeterLogDao;
 import com.xdkj.readmeter.obj.Collector;
@@ -26,6 +26,7 @@ public class ReadGPRS extends Thread {
 	private GPRS gprs;
 	private CountDownLatch latch;
 	private ConcurrentMap<String, Map<String,String>> results;
+	
 	
 	private Map<String, String> result = new HashMap<>();
 	
@@ -64,6 +65,8 @@ public class ReadGPRS extends Thread {
 		int normal = 0;
 		int timeout = 0;
 		
+		String cjqtimerout = "";
+		
 		try {
 			s = new Socket(gprs.getIp(),gprs.getPort());
 			s.setSoTimeout(2*60*1000);  //2min
@@ -86,6 +89,10 @@ public class ReadGPRS extends Thread {
 					col = list.get(i);
 					int cjqmeters = col.getMeterNums();
 					
+					if(col.getColAddr() == 0){
+						continue;
+					}
+					
 					at[0] = 0x0E;
 					at[1] = 0x0D;
 					at[2] = 0x0C;
@@ -99,41 +106,47 @@ public class ReadGPRS extends Thread {
 					
 					out.write(at);
 					
-					while ((count = in.read(data, 0, 1024)) > 0) {
-						
-						for(int j = 0;j<count;j++){
-							deal[middle+j] = data[j];
-						}
-
-						middle = middle + count;
-						
-						int meters = (middle)/10;
-//						System.out.println("cjqmeters"+cjqmeters+"meters:"+meters);
-						
-						if(count == 9 && (new String(data,0,count)).contains("BREAKDOWN")){
-//							breakdown(gprs,col); 
-							ReadMeterLogDao.addBreakdown(readlogid,gprs,col);
-							String breakdown = result.get("breakdown");
-							if(null == breakdown){
-								breakdown = col.getColAddr() +",";
-							}else{
-								breakdown = breakdown + col.getColAddr() +",";
+					try {
+						while ((count = in.read(data, 0, 1024)) > 0) {
+							
+							for(int j = 0;j<count;j++){
+								deal[middle+j] = data[j];
 							}
-							result.put("breakdown", breakdown);
-							timeout += cjqmeters;
-							middle = 0;
-							break;
+
+							middle = middle + count;
+							
+							int meters = (middle)/10;
+//							System.out.println("cjqmeters"+cjqmeters+"meters:"+meters);
+							
+							if(count == 9 && (new String(data,0,count)).contains("BREAKDOWN")){
+//								breakdown(gprs,col); 
+								ReadMeterLogDao.addBreakdown(readlogid,gprs,col);
+								String breakdown = result.get("breakdown");
+								if(null == breakdown){
+									breakdown = col.getColAddr() +",";
+								}else{
+									breakdown = breakdown + col.getColAddr() +",";
+								}
+								result.put("breakdown", breakdown);
+								timeout += cjqmeters;
+								middle = 0;
+								break;
+							}
+							if(cjqmeters == meters){
+//								dataToDB(gprs,col,deal);  
+								int errorcount = ReadMeterLogDao.addReadMeterLogs(readlogid,gprs,col,deal);
+//								normal += cjqmeters;
+								timeout += errorcount;
+								normal = normal + cjqmeters - errorcount;
+								middle = 0;
+								break;
+							}
 						}
-						if(cjqmeters == meters){
-//							dataToDB(gprs,col,deal);  
-							int errorcount = ReadMeterLogDao.addReadMeterLogs(readlogid,gprs,col,deal);
-//							normal += cjqmeters;
-							timeout += errorcount;
-							normal = normal + cjqmeters - errorcount;
-							middle = 0;
-							break;
-						}
+					} catch(SocketTimeoutException se){
+						//*号采集器timer out.
+						cjqtimerout = cjqtimerout + col.getColAddr()+" ";
 					}
+					
 				}
 				result.put("success", "true");
 				result.put("error", "");
@@ -160,12 +173,18 @@ public class ReadGPRS extends Thread {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			result.put("result", "正常"+normal+";异常"+timeout);
+
+			if(cjqtimerout.equals("")){
+				result.put("result", "正常"+normal+";异常"+timeout);
+			}else{
+				result.put("result", "正常"+normal+";异常"+timeout+";采集器超时:"+cjqtimerout);
+			}
+			
 			latch.countDown();
 		}
 		
 	}
-
+	
 	private void read188() {
 		Socket s = null;
 		OutputStream out = null;

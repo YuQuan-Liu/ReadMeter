@@ -126,12 +126,12 @@ public class ReadMeter extends Thread{
 			String result = "";
 			if(finished){
 				if(normal == 1){
-					result = "正常1;异常0;超时0";
+					result = "正常1;异常0";
 				}else{
-					result = "正常0;异常0;超时1";
+					result = "正常0;异常1";
 				}
 			}else{
-				result = "正常0;异常1;超时0";
+				result = "正常0;异常1";
 			}
 			//更新readlog   
 			ReadLogDao.updateReadLog(readlogid,finished,reason,result);
@@ -228,9 +228,9 @@ public class ReadMeter extends Thread{
 			}
 			String result = "";
 			if(finished){
-				result = "正常1;异常0;超时0";
+				result = "正常1;异常0";
 			}else{
-				result = "正常0;异常1;超时0";
+				result = "正常0;异常1";
 			}
 			ReadLogDao.updateReadLog(readlogid,finished,reason,result);
 		}

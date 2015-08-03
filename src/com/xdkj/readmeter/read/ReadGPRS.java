@@ -120,14 +120,16 @@ public class ReadGPRS extends Thread {
 								breakdown = breakdown + col.getColAddr() +",";
 							}
 							result.put("breakdown", breakdown);
-							timeout += timeout;
+							timeout += cjqmeters;
 							middle = 0;
 							break;
 						}
 						if(cjqmeters == meters){
 //							dataToDB(gprs,col,deal);  
-							ReadMeterLogDao.addReadMeterLogs(readlogid,gprs,col,deal);
-							normal += cjqmeters;
+							int errorcount = ReadMeterLogDao.addReadMeterLogs(readlogid,gprs,col,deal);
+//							normal += cjqmeters;
+							timeout += errorcount;
+							normal = normal + cjqmeters - errorcount;
 							middle = 0;
 							break;
 						}
@@ -158,7 +160,7 @@ public class ReadGPRS extends Thread {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			result.put("result", "正常"+normal+";超时"+timeout);
+			result.put("result", "正常"+normal+";异常"+timeout);
 			latch.countDown();
 		}
 		
@@ -273,7 +275,7 @@ public class ReadGPRS extends Thread {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			result.put("result", "正常"+normal+";超时"+timeout);
+			result.put("result", "正常"+normal+";异常"+timeout);
 			latch.countDown();
 		}
 	}

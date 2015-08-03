@@ -221,21 +221,24 @@ public class ReadMeterLogDao {
 			}
 		}
 	}
-
+	
 	/**
 	 * EG协议  添加表数据
 	 * @param readlogid
 	 * @param gprs
 	 * @param col
 	 * @param deal
+	 * @return 超时异常的表的个数
 	 */
-	public static void addReadMeterLogs(int readlogid, GPRS gprs,
+	public static int addReadMeterLogs(int readlogid, GPRS gprs,
 			Collector col, byte[] deal) {
 		int meterread = -1;
 		int meteraddr = 1;
 		byte meterstatus = 1;
 		String remark = "";
 		Connection con = null;
+		
+		int errorcount = 0;//计数  aaaa bbbb 表的个数
 		try {
 			con = DBPool.getConnection();
 			con.setAutoCommit(false);
@@ -258,11 +261,13 @@ public class ReadMeterLogDao {
 							meterread = -1;
 							meterstatus = 2;
 							remark = "aaaa";
+							errorcount++;
 						}else{
 							if(numstr.equals("bbbb")){
 								meterread = -1;
 								meterstatus = 3;
 								remark = "bbbb";
+								errorcount++;
 							}else{
 								meterstatus = 1;
 								remark = "";
@@ -313,6 +318,7 @@ public class ReadMeterLogDao {
 				}
 			}
 		}
+		return errorcount;
 	}
 
 	/**
@@ -321,13 +327,16 @@ public class ReadMeterLogDao {
 	 * @param gprs
 	 * @param meters
 	 * @param deal
+	 * @return 超时异常的表的个数
 	 */
-	public static void addReadMeterLogs(int readlogid, GPRS gprs, int meters,
+	public static int addReadMeterLogs(int readlogid, GPRS gprs, int meters,
 			byte[] deal) {
 		int meterread = -1;
 		byte meterstatus = 1;
 		byte valvestatus = 1;
 		String remark = "";
+		
+		int errorcount = 0;
 		
 		Connection con = null;
 		ByteBuffer bf = ByteBuffer.allocate(4);
@@ -346,6 +355,7 @@ public class ReadMeterLogDao {
 //					timeout
 					remark = meterstatus+"";
 					meterstatus = 4;
+					errorcount++;
 				}else{
 //					normal
 					remark = "";
@@ -411,6 +421,6 @@ public class ReadMeterLogDao {
 				}
 			}
 		}
-		
+		return errorcount;
 	}
 }

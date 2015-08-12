@@ -103,6 +103,12 @@ public class ReadGPRS extends Thread {
 					at[7] = (byte) 0xFF;
 					at[8] = (byte) 0xFF;
 					at[9] = (byte) (at[0] ^ at[1] ^ at[2] ^ at[3] ^ at[4] ^ at[5] ^ at[6] ^ at[7] ^ at[8]);
+					//delay 2s
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 					
 					out.write(at);
 					

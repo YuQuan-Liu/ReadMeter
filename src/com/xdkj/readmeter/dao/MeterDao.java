@@ -22,7 +22,8 @@ public class MeterDao {
 		
 		String SQL = "select CollectorAddr colAddr,COUNT(*) meterNums from meter " +
 				"where gprsid = ? and Valid = 1 " +
-				"group by CollectorAddr ";
+				"group by CollectorAddr " +
+				"order by CollectorAddr ";
 		Connection con = null;
 		List<Collector> list = new ArrayList<>();
 		Map map = null;

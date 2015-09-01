@@ -63,7 +63,7 @@ public class ReadMeterLogDao {
 	 * @param mid
 	 * @param data
 	 */
-	public static void addReadMeterLog(int readlogid, GPRS gprs, int mid,
+	public static int addReadMeterLog(int readlogid, GPRS gprs, int mid,
 			byte[] data) {
 		
 		int meterread = -1;
@@ -144,6 +144,36 @@ public class ReadMeterLogDao {
 			}
 			add = true;
 			break;
+		case 3:
+			meterread = data[1]&0xFF;
+			meterread = meterread << 8;
+			meterread = meterread|(data[2]&0xFF);
+			String numstr = Integer.toHexString(meterread);
+			if(numstr.equals("aaaa")){
+				meterread = -1;
+				meterstatus = 2;
+				remark = "aaaa";
+			}else{
+				if(numstr.equals("bbbb")){
+					meterread = -1;
+					meterstatus = 3;
+					remark = "bbbb";
+				}else{
+					meterstatus = 1;
+					remark = "";
+					try {
+						meterread = Integer.valueOf(numstr);
+					} catch (NumberFormatException e) {
+//						System.out.println("返回数据错误"+"gprsid"+gprs.getPid() +"cjqaddr"+cjqaddr+"meteraddr" +deal[10 * i + 4]);
+//						e.printStackTrace();
+						meterread = -1;
+						meterstatus = 2;
+						remark = e.getMessage();
+					}
+				}
+			}
+			add = true;
+			break;
 		default:
 			break;
 		}
@@ -180,7 +210,7 @@ public class ReadMeterLogDao {
 				}
 			}
 		}
-		
+		return meterstatus;
 	}
 
 	public static void addBreakdown(int readlogid, GPRS gprs, Collector col) {
@@ -297,6 +327,97 @@ public class ReadMeterLogDao {
 						//error != 0 give up
 					}
 				}
+			}
+			
+			call.executeBatch();
+			con.commit();
+			
+		} catch (SQLException e) {
+			try {
+				con.rollback();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
+			e.printStackTrace();
+		} finally{
+			if(con != null){
+				try {
+					con.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return errorcount;
+	}
+	
+	/**
+	 * EG协议  添加表数据
+	 * @param readlogid
+	 * @param gprs
+	 * @param col
+	 * @param meterdata
+	 * @return 超时异常的表的个数
+	 */
+	public static int addReadMeterLogsAtom(int readlogid, GPRS gprs,
+			Collector col, byte[] meterdata) {
+		int meterread = -1;
+		int meteraddr = 1;
+		byte meterstatus = 1;
+		String remark = "";
+		Connection con = null;
+		
+		int errorcount = 0;//计数  aaaa bbbb 表的个数
+		try {
+			con = DBPool.getConnection();
+			con.setAutoCommit(false);
+			
+			CallableStatement call = con.prepareCall("{call addreadmeterlogs(?,?,?,?,?,?,?,?)}");
+			
+			for(int i = 0;i < col.getMeterNums();i++){
+				
+				meteraddr = meterdata[3 * i]&0xFF;
+				meterread = meterdata[3 * i + 1]&0xFF;
+				meterread = meterread << 8;
+				meterread = meterread|(meterdata[3 * i + 2]&0xFF);
+				String numstr = Integer.toHexString(meterread);
+				if(numstr.equals("aaaa")){
+					meterread = -1;
+					meterstatus = 2;
+					remark = "aaaa";
+					errorcount++;
+				}else{
+					if(numstr.equals("bbbb")){
+						meterread = -1;
+						meterstatus = 3;
+						remark = "bbbb";
+						errorcount++;
+					}else{
+						meterstatus = 1;
+						remark = "";
+						try {
+							meterread = Integer.valueOf(numstr);
+						} catch (NumberFormatException e) {
+//							System.out.println("返回数据错误"+"gprsid"+gprs.getPid() +"cjqaddr"+cjqaddr+"meteraddr" +deal[10 * i + 4]);
+//							e.printStackTrace();
+							meterread = -1;
+							remark = e.getMessage();
+						}
+					}
+				}
+				
+				call.setInt(1, readlogid);
+				call.setInt(2, gprs.getPid());  //
+				call.setInt(3, col.getColAddr());	//
+				call.setInt(4, meteraddr);	//
+				
+				call.setInt(5, meterstatus);
+				call.setInt(6, meterread);  //
+				call.setInt(7, 1);	//
+				call.setString(8, remark);	//
+				
+				call.addBatch();
+				
 			}
 			
 			call.executeBatch();

@@ -210,7 +210,7 @@ public class ReadMeter extends Thread{
 		int ack_timeout_count = 0;  //抄表指令未收到确认计数   指令重发次数
 		int rcv_10timeout_count = 0;  //接收数据 10s超时计数
 		for(int j = 0;j < 3 && read_good == 0;j++){
-			
+			read_good = 0;
 			boolean read_ack = false;  //集中器收到抄表指令
 			//~~~~~~~~~~~~~~~~~~~~~~~~~给集中器发送抄表指令
 			try {
@@ -356,7 +356,10 @@ public class ReadMeter extends Thread{
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			
+			if(read_good == 0){
+				seq++;
+				seq = (byte) (seq&0x0F);
+			}
 //			一次抄单个表完成。
 		}
 		//~~~~~~~~~~~~~~~~~~~~~~~~~记录抄这个采集器的结果~~~~

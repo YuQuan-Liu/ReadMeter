@@ -220,7 +220,7 @@ public class ReadGPRS extends Thread {
 			seq++;
 			seq = (byte) (seq&0x0F);
 			for(int j = 0;j < 3 && read_good == 0;j++){
-				
+				read_good = 0;
 				boolean read_ack = false;  //集中器收到抄表指令
 				cjq_timeout = false;
 				//~~~~~~~~~~~~~~~~~~~~~~~~~给集中器发送抄表指令
@@ -338,7 +338,7 @@ public class ReadGPRS extends Thread {
 											slave_seq = slave_seq_;
 											int meternum_ = (data_len-12)/3;
 											
-											if(frame_[17] == 0xFF){
+											if((byte)0xFF == frame_[17]){
 //												System.out.println("采集器超时~~~~");
 //												logger.info("采集器超时~~~~返回指令0xFF");
 												cjq_timeout = true;
@@ -413,6 +413,10 @@ public class ReadGPRS extends Thread {
 					Thread.sleep(1000);
 				} catch (InterruptedException e1) {
 					e1.printStackTrace();
+				}
+				if(read_good == 0){
+					seq++;
+					seq = (byte) (seq&0x0F);
 				}
 			}
 			//~~~~~~~~~~~~~~~~~~~~~~~~~记录抄这个采集器的结果~~~~

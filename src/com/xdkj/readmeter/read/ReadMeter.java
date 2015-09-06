@@ -330,7 +330,7 @@ public class ReadMeter extends Thread{
 											meterdata[1] = frame_[19];
 											meterdata[2] = frame_[20];
 											meterstatus = ReadMeterLogDao.addReadMeterLog(readlogid,gprs,mid,meterdata);
-											read_good++;
+											read_good = 1;
 											break;
 										}
 									}else{

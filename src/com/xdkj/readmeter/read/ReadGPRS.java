@@ -364,7 +364,7 @@ public class ReadGPRS extends Thread {
 										
 										if(cjq_timeout){
 											//跳出接收循环
-											read_good++;
+											read_good = 1;
 											ReadMeterLogDao.addBreakdown(readlogid,gprs,col);
 											error_count += cjqmeters;
 											cjqtimerout = cjqtimerout + col.getColAddr() +" ";
@@ -374,7 +374,7 @@ public class ReadGPRS extends Thread {
 										if(meter_rcv == cjqmeters){
 //											System.out.println("read over~~~~~~~~~~~~~~~~~~~~~");
 //											logger.info("read over~~~~~~~~~~~~~~~~~~~~~");
-											read_good++;
+											read_good = 1;
 											int errorcount = ReadMeterLogDao.addReadMeterLogsAtom(readlogid,gprs,col,meterdata);
 											normal_count = normal_count + cjqmeters - errorcount;
 											error_count += errorcount;

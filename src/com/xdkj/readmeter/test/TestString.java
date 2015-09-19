@@ -95,6 +95,15 @@ public class TestString {
 		for(int i = 0;i < bb.length;i++){
 			System.out.println(bb[i]);
 		}
+		
+		byte[] tt = new byte[]{0x01,0x00,0x00,0x00,0x00,0x55,0x55};
+		String meteraddr = "";
+		for(int i = 0;i < 7;i++){
+			meteraddr += new StringBuilder(String.format("%02x", tt[i]&0xFF)).reverse().toString();
+			System.out.println(meteraddr);
+		}
+		
+		System.out.println(new StringBuilder(meteraddr).reverse().toString());
 	}
 	
 	@Test

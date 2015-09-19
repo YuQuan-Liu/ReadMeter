@@ -111,10 +111,10 @@ public class ReadMeterLogDao {
 			}
 			break;
 		case 2:
-			meterstatus = data[16];
-			valvestatus = data[16];
+			meterstatus = data[20];
+			valvestatus = data[20];
 			ByteBuffer bf = ByteBuffer.allocate(4);
-			bf.put(data, 12, 4);
+			bf.put(data, 16, 4);
 			bf.order(ByteOrder.LITTLE_ENDIAN);
 			
 			String readhexstr = Integer.toHexString(bf.getInt(0));  //get the int   turn the int to hex string
@@ -470,8 +470,8 @@ public class ReadMeterLogDao {
 			
 			for(int i = 0;i < meters;i++){
 				meteraddr = "";
-				meterstatus = deal[i*14+1+3+12];
-				valvestatus = deal[i*14+1+3+12];
+				meterstatus = deal[i*14+4+1+3+12];
+				valvestatus = deal[i*14+4+1+3+12];
 				if((meterstatus &0x40) ==0x40){
 //					timeout
 					remark = meterstatus+"";
@@ -498,11 +498,11 @@ public class ReadMeterLogDao {
 				
 				for(int j = 0;j<7;j++){
 					
-					meteraddr += new StringBuilder(String.format("%02x", deal[14*i + 1+3+j]&0xFF)).reverse().toString();
+					meteraddr += new StringBuilder(String.format("%02x", deal[14*i +4+ 1+3+j]&0xFF)).reverse().toString();
 					
 				}
 				
-				bf.put(deal, i*14+1+3+8, 4);
+				bf.put(deal, i*14+4+1+3+8, 4);
 				String readhexstr = Integer.toHexString(bf.getInt(0));  //get the int   turn the int to hex string
 				meterread = Integer.parseInt(readhexstr)/100;  //turn the readhexstr to the real read
 				bf.flip();

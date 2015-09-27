@@ -406,9 +406,8 @@ public class ReadGPRS extends Thread {
 					}
 					
 					if(timeout){
-						//本次接收指令超时。
-//						logger.info("接收抄表数据100s超时");
-//						System.out.println("接收抄表数据超时");
+						//本次接收指令超时。   接收抄表数据100s超时
+						break;
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -646,6 +645,12 @@ public class ReadGPRS extends Thread {
 						e.printStackTrace();
 					}
 				}
+				
+				if(timeout){
+					//本次接收指令超时。   接收抄表数据6min超时
+					timeout_count = meters;
+					break;
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -667,7 +672,12 @@ public class ReadGPRS extends Thread {
 		}
 		result.put("result", "正常"+normal+";异常"+timeout_count);
 		result.put("success", "true");
-		result.put("error", "");
+		if(timeout){
+			result.put("error", "接收数据超时");
+		}else{
+			result.put("error", "");
+		}
+		
 		latch.countDown();
 		
 	}

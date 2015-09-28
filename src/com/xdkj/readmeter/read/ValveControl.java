@@ -190,7 +190,6 @@ public class ValveControl extends Thread{
 								Frame readdata = new Frame(Arrays.copyOf(deal, middle));
 								if(readdata.getFn() == 0x01){
 									//集中器收到发出去的指令
-									normal++;
 									finished = true;
 								}
 							}else{

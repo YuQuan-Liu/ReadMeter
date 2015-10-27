@@ -85,7 +85,9 @@ public class ReadMeter extends Thread{
 				at[1] = 0x0D;
 				at[2] = 0x0C;
 				at[3] = 0x02;
-				at[4] = Byte.parseByte(meter.getMeterAddr());
+				
+				
+				at[4] = (byte) Integer.parseInt(meter.getMeterAddr());//Byte.parseByte(meter.getMeterAddr());
 				at[5] = (byte) (Integer.parseInt(meter.getCollectorAddr()) / 256);
 				at[6] = (byte) Integer.parseInt(meter.getCollectorAddr());
 				at[7] = (byte) 0xFF;
@@ -245,7 +247,7 @@ public class ReadMeter extends Thread{
 			framedata[0] = (byte) 0xAA;
 			framedata[1] = (byte) (Integer.parseInt(meter.getCollectorAddr()) / 256);
 			framedata[2] = (byte) Integer.parseInt(meter.getCollectorAddr());
-			framedata[3] = Byte.parseByte(meter.getMeterAddr());
+			framedata[3] = (byte) Integer.parseInt(meter.getMeterAddr());//Byte.parseByte(meter.getMeterAddr());
 			
 			boolean read_ack = false;  //集中器收到抄表指令
 			read_ack = ReadGPRS.sendFrame(s, out, in, seq, gprsaddr, framedata);
@@ -293,7 +295,8 @@ public class ReadMeter extends Thread{
 							
 							if(slave_seq != slave_seq_){
 								slave_seq = slave_seq_;
-								if(deal[18] == Byte.parseByte(meter.getMeterAddr())){
+								
+								if(deal[18] == (byte) Integer.parseInt(meter.getMeterAddr())){
 									//地址相同
 									//save the data
 									byte[] meterdata = new byte[3];

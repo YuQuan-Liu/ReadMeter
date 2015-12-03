@@ -50,9 +50,18 @@ public class ReadMeter extends Thread{
 			//EG表  atom集中器
 			readEGatom();
 			break;
+		case 4:
+			//D10 下的表
+			readD10();
 		default:
 			break;
 		}
+	}
+
+	private void readD10() {
+		
+		//更新readlog  
+		ReadLogDao.updateReadLog(readlogid,true,"D10","正常0;异常1");
 	}
 
 	private void readEG() {

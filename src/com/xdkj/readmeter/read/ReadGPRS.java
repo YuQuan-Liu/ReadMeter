@@ -54,11 +54,23 @@ public class ReadGPRS extends Thread {
 			//EGatom
 			readEGatom();
 			break;
+		case 4:
+			//D10
+			readD10();
 		default:
 			break;
 		}
 	}
 	
+	private void readD10() {
+		//D10 定时上报数据  不能主动去抄
+		result.put("success", "true");
+		result.put("error", "");
+		int meters = MeterDao.getMeterCountByGID(gprs.getPid());
+		result.put("result", "正常"+meters+";");
+		latch.countDown();
+	}
+
 	private void readEG() {
 		Socket s = null;
 		OutputStream out = null;

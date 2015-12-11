@@ -593,7 +593,7 @@ public class ReadGPRS extends Thread {
 			int meters = MeterDao.getMeterCountByGID(gprs.getPid());
 			try {
 				//等待集中器返回数据
-				s.setSoTimeout(360000);   //6min
+				s.setSoTimeout(120000);   //2min  抄集中器全部表时   会每隔9s发送一个Fake帧
 				timeout = false;
 				try {
 					byte[] deal = new byte[1024];
@@ -618,27 +618,33 @@ public class ReadGPRS extends Thread {
 							break;
 						case 1:
 							//这一帧正确处理
-							int slave_seq_ = deal[13] & 0x0F;
-							if(slave_seq != slave_seq_){
-								slave_seq = slave_seq_;
-								Frame readdata = new Frame(Arrays.copyOf(deal, middle));
-								byte[] meterdata = readdata.getData();
-								int metercount = (meterdata.length-1-3-4)/14;
-								meters -= metercount;
-								
-								//判断表的状态  看是否超时  
-								for(int i = 0;i < metercount;i++){
-									byte state = meterdata[i*14+4+3+1+12];
-									if(((state &0x40) ==0x40) || ((state &0x80)==0x80)){
-										timeout_count++;
-									}else{
-										normal++;
+							if(deal[12] == 0x0B){  //AFN
+								//数据帧
+								int slave_seq_ = deal[13] & 0x0F;
+								if(slave_seq != slave_seq_){
+									slave_seq = slave_seq_;
+									Frame readdata = new Frame(Arrays.copyOf(deal, middle));
+									byte[] meterdata = readdata.getData();
+									int metercount = (meterdata.length-1-3-4)/14;
+									meters -= metercount;
+									
+									//判断表的状态  看是否超时  
+									for(int i = 0;i < metercount;i++){
+										byte state = meterdata[i*14+4+3+1+12];
+										if(((state &0x40) ==0x40) || ((state &0x80)==0x80)){
+											timeout_count++;
+										}else{
+											normal++;
+										}
 									}
+									ReadMeterLogDao.addReadMeterLogs(readlogid,gprs,metercount,meterdata);
+									
+								}else{
+									//这条数据我已经收到过了  do nothing
 								}
-								ReadMeterLogDao.addReadMeterLogs(readlogid,gprs,metercount,meterdata);
-								
 							}else{
-								//这条数据我已经收到过了  do nothing
+								//抄全部表时   上传的Fake帧   AFN==0x0F
+								//donothing ...  防止socket 2min超时
 							}
 							//多帧时   为接收下一帧做准备
 							middle = 0;

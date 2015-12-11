@@ -119,9 +119,10 @@ public class ReadMeterLogDao {
 			
 			String readhexstr = Integer.toHexString(bf.getInt(0));  //get the int   turn the int to hex string
 			meterread = Integer.parseInt(readhexstr)/100;  //turn the readhexstr to the real read
-			
-			if((meterstatus &0x40) == 0x40){
+			if(((meterstatus &0x40) ==0x40) || ((meterstatus &0x80)==0x80)){
 //				timeout
+//				0x40 ~ 表
+//				0x80 ~ 采集器
 				remark = meterstatus+"";
 				meterstatus = 4;
 			}else{
@@ -472,8 +473,10 @@ public class ReadMeterLogDao {
 				meteraddr = "";
 				meterstatus = deal[i*14+4+1+3+12];
 				valvestatus = deal[i*14+4+1+3+12];
-				if((meterstatus &0x40) ==0x40){
+				if(((meterstatus &0x40) ==0x40) || ((meterstatus &0x80)==0x80)){
 //					timeout
+//					0x40 ~ 表
+//					0x80 ~ 采集器
 					remark = meterstatus+"";
 					meterstatus = 4;
 					errorcount++;

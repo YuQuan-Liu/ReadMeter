@@ -56,21 +56,22 @@ public class ReadNeighbor extends Thread{
 		List<WasteLog> wastelogs = WasteLogDao.wasteStatistics(nid, readlogid);
 		WasteStatistic.statistic(wastelogs,nid,readlogid);
 		
-		Readlog readlog = ReadLogDao.getByID(readlogid);
-		//结算阀控需要自动扣费的表具
-		MeterDeductionDao.calculate(nid,readlog.getAdminid(),readlog.getPid());
-		
-		//对低于用户的金额阀值的用户进行短信提醒
-		List<CustomerWarn> list = MeterDeductionDao.warnCustomer(nid,readlog.getAdminid(),readlog.getPid());
-		if(list != null){
-			new WarnSender(list).start();
-		}
-		
-		//对阀控自动扣费的表具进行阀门控制
-		int valvelogid = MeterDeductionDao.valvecontrol(nid,readlog.getAdminid(),readlog.getPid());
-		if(valvelogid > 0){
-			DealAction.addAction("valve", valvelogid);
-		}
+//		关闭自动结算表具功能
+//		Readlog readlog = ReadLogDao.getByID(readlogid);
+//		//结算阀控需要自动扣费的表具
+//		MeterDeductionDao.calculate(nid,readlog.getAdminid(),readlog.getPid());
+//		
+//		//对低于用户的金额阀值的用户进行短信提醒
+//		List<CustomerWarn> list = MeterDeductionDao.warnCustomer(nid,readlog.getAdminid(),readlog.getPid());
+//		if(list != null){
+//			new WarnSender(list).start();
+//		}
+//		
+//		//对阀控自动扣费的表具进行阀门控制
+//		int valvelogid = MeterDeductionDao.valvecontrol(nid,readlog.getAdminid(),readlog.getPid());
+//		if(valvelogid > 0){
+//			DealAction.addAction("valve", valvelogid);
+//		}
 		
 		String reason = "";
 		String result = "";

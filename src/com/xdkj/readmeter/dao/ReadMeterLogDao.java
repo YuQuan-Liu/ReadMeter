@@ -68,6 +68,8 @@ public class ReadMeterLogDao {
 		
 		int meterread = -1;
 		byte meterstatus = 1;
+		byte meterstatus_l = 0;
+		byte meterstatus_h = 0;
 		byte valvestatus = 1;
 		String remark = "";
 		boolean add = false;
@@ -111,7 +113,8 @@ public class ReadMeterLogDao {
 			}
 			break;
 		case 2:
-			meterstatus = data[20];
+			meterstatus_l = data[20];
+			meterstatus_h = data[21];
 			valvestatus = data[20];
 			ByteBuffer bf = ByteBuffer.allocate(4);
 			bf.put(data, 16, 4);
@@ -119,21 +122,38 @@ public class ReadMeterLogDao {
 			
 			String readhexstr = Integer.toHexString(bf.getInt(0));  //get the int   turn the int to hex string
 			meterread = Integer.parseInt(readhexstr)/100;  //turn the readhexstr to the real read
-			if(((meterstatus &0x40) ==0x40) || ((meterstatus &0x80)==0x80)){
+			if(((meterstatus_l &0x40) ==0x40) || ((meterstatus_l &0x80)==0x80)){
 //				timeout
 //				0x40 ~ 表
 //				0x80 ~ 采集器
-				remark = meterstatus+"";
 				meterstatus = 4;
 			}else{
 //				normal
-				meterstatus = 1;
+				if((meterstatus_h & 0x20) == 0x20){
+//					remark = "气泡";
+					meterstatus = 6;
+				}else{
+					if((meterstatus_h & 0x30) == 0x30){
+//						remark = "致命故障";
+						meterstatus = 7;
+					}else{
+						if((meterstatus_h & 0x80) == 0x80){
+//							remark = "强光";
+							meterstatus = 8;
+						}else{
+							remark = "";
+							meterstatus = 1;
+						}
+					}
+				}
 			}
-			
+			remark = meterstatus_l+" "+ meterstatus_h;
 			switch (valvestatus &0x03) {
 			case 0x00:
 				valvestatus = 1; //开
 				break;
+			case 0x01:
+				valvestatus = 0; //关
 			case 0x02:
 				valvestatus = 0; //关
 				break;
@@ -455,6 +475,8 @@ public class ReadMeterLogDao {
 			byte[] deal) {
 		int meterread = -1;
 		byte meterstatus = 1;
+		byte meterstatus_l = 0;
+		byte meterstatus_h = 0;
 		byte valvestatus = 1;
 		String remark = "";
 		
@@ -471,23 +493,43 @@ public class ReadMeterLogDao {
 			
 			for(int i = 0;i < meters;i++){
 				meteraddr = "";
-				meterstatus = deal[i*14+4+1+3+12];
+				meterstatus_l = deal[i*14+4+1+3+12];
+				meterstatus_h = deal[i*14+4+1+3+12+1];
 				valvestatus = deal[i*14+4+1+3+12];
-				if(((meterstatus &0x40) ==0x40) || ((meterstatus &0x80)==0x80)){
+				if(((meterstatus_l &0x40) ==0x40) || ((meterstatus_l &0x80)==0x80)){
 //					timeout
 //					0x40 ~ 表
 //					0x80 ~ 采集器
-					remark = meterstatus+"";
 					meterstatus = 4;
 					errorcount++;
 				}else{
 //					normal
-					remark = "";
-					meterstatus = 1;
+					if((meterstatus_h & 0x20) == 0x20){
+//						remark = "气泡";
+						meterstatus = 6;
+					}else{
+						if((meterstatus_h & 0x30) == 0x30){
+//							remark = "致命故障";
+							meterstatus = 7;
+						}else{
+							if((meterstatus_h & 0x80) == 0x80){
+//								remark = "强光";
+								meterstatus = 8;
+							}else{
+//								remark = "";
+								meterstatus = 1;
+							}
+						}
+					}
 				}
+
+				remark = meterstatus_l+" " +meterstatus_h;
 				switch (valvestatus &0x03) {
 				case 0x00:
 					valvestatus = 1; //开
+					break;
+				case 0x01:
+					valvestatus = 0; //关
 					break;
 				case 0x02:
 					valvestatus = 0; //关

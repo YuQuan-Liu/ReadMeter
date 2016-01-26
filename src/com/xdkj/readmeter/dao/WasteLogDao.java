@@ -94,7 +94,7 @@ public class WasteLogDao {
 	public static void addNeiWasteLog(int nid, int readlogid) {
 		
 		String SQL = "select sum(readdata) from meter m " +
-				"where neighborid = ? and m.valid = 1";
+				"where neighborid = ? and m.valid = 1 and m.mainmeter = 0";
 		String SQL2 = "select c.lounum,m.pid,m.readdata from meter m " +
 				"join customer c " +
 				"on m.customerid = c.pid " +
@@ -126,7 +126,7 @@ public class WasteLogDao {
 					break;
 				}
 				if(mid > 0){
-					addWasteLog(nid, readlogid, mid, "0", readdata, allread-readdata, readdata-(allread-readdata));
+					addWasteLog(nid, readlogid, mid, "0", readdata, allread, readdata-allread);
 				}
 			}
 		} catch (SQLException e) {

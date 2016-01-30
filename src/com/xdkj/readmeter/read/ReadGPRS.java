@@ -597,9 +597,10 @@ public class ReadGPRS extends Thread {
 				timeout = false;
 				try {
 					byte[] deal = new byte[1024];
+					byte[] middle_data = new byte[256];
 					int middle = 0;
 					int slave_seq = 20;  //接收过来的seq 取值范围为0~15  第一次肯定不相同
-					while ((count = in.read(data, 0, 100)) > 0) {
+					while ((count = in.read(data, 0, 256)) > 0) {
 						
 						for(int k = 0;k < count;k++){
 							deal[middle+k] = data[k];
@@ -618,12 +619,16 @@ public class ReadGPRS extends Thread {
 							break;
 						case 1:
 							//这一帧正确处理
+							//get the frame len
+							int framelen = (deal[1]&0xFF) | ((deal[2]&0xFF)<<8);
+							framelen = framelen >> 2;
+							
 							if(deal[12] == 0x0B){  //AFN
 								//数据帧
 								int slave_seq_ = deal[13] & 0x0F;
 								if(slave_seq != slave_seq_){
 									slave_seq = slave_seq_;
-									Frame readdata = new Frame(Arrays.copyOf(deal, middle));
+									Frame readdata = new Frame(Arrays.copyOf(deal, framelen+8));
 									byte[] meterdata = readdata.getData();
 									int metercount = (meterdata.length-1-3-4)/14;
 									meters -= metercount;
@@ -647,7 +652,15 @@ public class ReadGPRS extends Thread {
 								//donothing ...  防止socket 2min超时
 							}
 							//多帧时   为接收下一帧做准备
-							middle = 0;
+							middle = middle - framelen-8;
+							if(middle != 0){
+								for(int m = 0;m < middle;m++){
+									middle_data[m]=deal[framelen+8+m];
+								}
+								for(int m = 0;m < middle;m++){
+									deal[m]=middle_data[m];
+								}
+							}
 							break;
 						}
 						if(meters <= 0){

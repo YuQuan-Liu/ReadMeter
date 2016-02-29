@@ -30,6 +30,7 @@ public class ReadNeighbor extends Thread{
 	public void run() {
 		List<GPRS> gprss = GPRSDao.getGPRSsbyNID(nid);
 		if(gprss.size() == 0){
+			ReadLogDao.updateReadLog(readlogid,"无集中器","无集中器");
 			return;
 		}
 		

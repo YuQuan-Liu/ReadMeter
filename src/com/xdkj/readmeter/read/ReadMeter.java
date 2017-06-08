@@ -274,7 +274,7 @@ public class ReadMeter extends Thread{
 			
 			try {
 				//等待集中器返回数据  10s
-				s.setSoTimeout(10000);
+				s.setSoTimeout(15000);
 				byte[] deal = new byte[200];
 				int middle = 0;
 				timeout = false;

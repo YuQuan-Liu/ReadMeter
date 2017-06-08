@@ -334,7 +334,7 @@ public class ReadGPRS extends Thread {
 				
 				/***************************等待集中器返回数据********************************/
 				try {
-					s.setSoTimeout(100000);
+					s.setSoTimeout(120000);
 					byte[] deal = new byte[200];
 					int middle = 0;
 					timeout = false;

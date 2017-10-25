@@ -53,6 +53,10 @@ public class ReadMeter extends Thread{
 		case 4:
 			//D10 下的表
 			readD10();
+		case 5:
+			//188
+			read188v2();
+			break;
 		default:
 			break;
 		}
@@ -586,6 +590,198 @@ public class ReadMeter extends Thread{
 		
 		
 	}
+	
+	private void read188v2() {
+		Socket s = null;
+		OutputStream out = null;
+		InputStream in = null;
+		int count = 0;
+		byte[] data = new byte[256];
+		byte seq = 0;   //服务器给集中器发送的序列号
+		
+		
+		try {
+			s = new Socket(gprs.getIp(),gprs.getPort());
+			out = s.getOutputStream();
+			in = s.getInputStream();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		//如果没有连接成功 
+		if(s == null){
+			//没有连接到监听程序  
+			String result = "正常0;异常1";
+			//更新readlog  
+			ReadLogDao.updateReadLog(readlogid,true,"连接监听异常",result);
+			return;
+		}
+		
+		//服务器登录指令
+		byte[] gprsaddr = StringUtil.string2Byte(gprs.getGprsaddr());
+		
+		//~~~~~~~~~~~~~~~~~~~~~~~登录监听服务器
+		boolean timeout = false;
+		boolean read = false;
+		read = ReadGPRS.loginListener(s, out, in, gprsaddr);
+		if(!read){
+			//集中器不在线
+			try {
+				if(in != null){
+					in.close();
+				}
+				if(out != null){
+					out.close();
+				}
+				if(s != null){
+					s.close();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			String result = "正常0;异常1";
+			//更新readlog  
+			ReadLogDao.updateReadLog(readlogid,true,"集中器不在线",result);
+			return;
+		}
+		
+		/************************************************************************/
+		//开始抄表
+		int read_good = 0;
+		int meterstatus = 1;   //表状态   ==1正常    ！=1 异常
+		int ack_timeout_count = 0;  //抄表指令未收到确认计数   指令重发次数
+		int rcv_15timeout_count = 0;  //接收数据 15s超时计数
+		for(int i = 0;i < 3 && read_good == 0;i++){
+			
+			if(read_good == 0){
+				seq++;
+				seq = (byte) (seq&0x0F);
+			}
+			
+			//the data in the frame
+			byte[] meteraddr = StringUtil.string2Byte(meter.getMeterAddr());
+			byte[] cjqaddr = StringUtil.string2Byte(meter.getCollectorAddr());
+			byte[] framedata = new byte[13];
+			framedata[0] = 0x11;
+			for(int j= 0;j < 5;j++){
+				framedata[j+1] = meteraddr[4-j];
+			}
+			for(int j= 0;j < 7;j++){
+				framedata[j+6] = meteraddr[6-j];
+			}
+			boolean read_ack = false;  //集中器收到抄表指令
+			read_ack = ReadGPRS.sendFrame(s, out, in, seq, gprsaddr, framedata);
+			
+			if(!read_ack){
+				//没有收到集中器的收到指令确认  3s后重新发送指令
+				ack_timeout_count++;
+				try {
+					Thread.sleep(3000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				continue;
+			}
+			
+			try {
+				//等待集中器返回数据  15s
+				s.setSoTimeout(15000);
+				byte[] deal = new byte[256];
+				int middle = 0;
+				timeout = false;
+				
+				try {
+					int slave_seq = 20;  //接收过来的seq 取值范围为0~15  第一次肯定不相同
+					while ((count = in.read(data, 0, 256)) > 0) {
+						
+						for(int k = 0;k < count;k++){
+							deal[middle+k] = data[k];
+						}
+						middle = middle + count;
+						//从deal中查找帧  如果没有找到帧  则放弃。
+						//首先查找0x68  直到找到0x68为止
+						int ret = ReadGPRS.checkFrame(deal, middle);
+						switch(ret){
+						case 0:
+							//数据不够  继续接收
+							break;
+						case -1:
+							//这一帧错误
+							middle = 0;  //重新开始接收
+							break;
+						case 1:
+							//这一帧正确处理
+							int slave_seq_ = deal[13] & 0x0F;
+							if(slave_seq != slave_seq_){
+								slave_seq = slave_seq_;
+								Frame readdata = new Frame(Arrays.copyOf(deal, middle));
+								byte[] meterdata = readdata.getData();
+								
+								byte state = meterdata[4+3+1+12]; //4~组    3~afn-seq-fn 1~type  12~status前的数据
+								if(((byte)(state &0x40) ==(byte)0x40) || ((byte)(state &0x80)==(byte)0x80)){
+									meterstatus = 0;
+								}else{
+									meterstatus = 1;
+								}
+								ReadMeterLogDao.addReadMeterLog(readlogid,gprs,mid,meterdata);
+								read_good = 1;
+								
+							}else{
+								//这条数据我已经收到过了  do nothing
+							}
+							//多帧时   为接收下一帧做准备
+							middle = 0;
+							break;
+						}
+						if(read_good == 1){
+							//跳出接收循环
+							break;
+						}
+					}
+				} catch (SocketTimeoutException e) {
+					timeout = true;
+					rcv_15timeout_count++;
+					e.printStackTrace();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		//~~~~~~~~~~~~~~~~~~~~~~~~~记录抄这个采集器的结果~~~~
+		try {
+			if(out!=null){
+				out.close();
+			}
+			if(in!=null){
+				in.close();
+			}
+			if(s!=null){
+				s.close();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		String result = "";
+		String failreason = "";
+		if(read_good == 1){
+			failreason = "";
+			if(meterstatus == 1){
+				result = "正常1;异常0";
+			}else{
+				result = "正常0;异常1";
+				failreason = "表状态:"+meterstatus;
+			}
+		}else{
+			failreason = "指令重发:"+ack_timeout_count+";15s超时:"+rcv_15timeout_count;
+			result = "正常0;异常1";
+		}
+		//更新readlog  
+		ReadLogDao.updateReadLog(readlogid,true,failreason,result);
+		
+		
+	}
+	
 	
 	public static void main(String[] args) {
 		new ReadMeter(1, 1).start();

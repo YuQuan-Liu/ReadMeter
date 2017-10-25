@@ -57,6 +57,10 @@ public class ReadGPRS extends Thread {
 		case 4:
 			//D10
 			readD10();
+		case 5:
+			//188 v2
+			read188v2();
+			break;
 		default:
 			break;
 		}
@@ -713,6 +717,229 @@ public class ReadGPRS extends Thread {
 		
 	}
 
+
+	private void read188v2() {
+		Socket s = null;
+		OutputStream out = null;
+		InputStream in = null;
+		int count = 0;
+		byte[] data = new byte[1024];
+		byte seq = 0;   //服务器给集中器发送的序列号
+		//连接监听程序
+		try {
+			s = new Socket(gprs.getIp(),gprs.getPort());
+			out = s.getOutputStream();
+			in = s.getInputStream();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		//如果没有连接成功 
+		if(s == null){
+			result.put("success", "false");
+			result.put("error", "连接监听异常");
+			result.put("result", "失败");
+			latch.countDown();
+			return;
+		}
+		
+		//服务器登录指令
+		byte[] gprsaddr = StringUtil.string2Byte(gprs.getGprsaddr());
+
+		boolean read = false;
+		read = loginListener(s, out, in, gprsaddr);
+		
+		if(!read){
+			//集中器不在线
+			//记录  return; 
+			try {
+				if(in != null){
+					in.close();
+				}
+				if(out != null){
+					out.close();
+				}
+				if(s != null){
+					s.close();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			result.put("success", "false");
+			result.put("error", "集中器不在线");
+			result.put("result", "失败");
+			latch.countDown();
+			return;
+		}
+				
+		/************************************************************************/
+		//开始抄表
+		int read_good = 0;
+		int normal = 0;
+		int timeout_count = 0;
+		int ack_timeout_count = 0;  //抄表指令未收到确认计数   指令重发次数
+		int rcv_6mtimeout_count = 0;  //接收数据 6m超时计数
+		boolean timeout = false;
+		
+		for(int j = 0;j < 3 && read_good == 0;j++){
+			if(read_good == 0){
+				seq++;
+				seq = (byte) (seq&0x0F);
+			}
+			normal = 0;
+			timeout_count = 0;
+			
+			//~~~~~~~~~~~~~~~~~~~~~~~~~给集中器发送抄表指令
+			//the data in the frame
+			byte[] framedata = new byte[1];
+			framedata[0] = (byte) 0xFF;
+			
+			boolean read_ack = false;  //集中器收到抄表指令
+			read_ack = sendFrame(s, out, in, seq, gprsaddr, framedata);
+			
+			if(!read_ack){
+				//没有收到集中器的收到指令确认
+				ack_timeout_count++;
+				try {
+					Thread.sleep(3000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				continue;
+			}
+			
+			
+			int meters = MeterDao.getMeterCountByGID(gprs.getPid());
+			try {
+				//等待集中器返回数据
+				s.setSoTimeout(120000);   //2min  抄集中器全部表时   会每隔9s发送一个Fake帧
+				timeout = false;
+				try {
+					byte[] deal = new byte[1024];
+					byte[] middle_data = new byte[256];
+					int middle = 0;
+					int slave_seq = 20;  //接收过来的seq 取值范围为0~15  第一次肯定不相同
+					int frame_all = 0;
+					int frame_count = 0;
+					while ((count = in.read(data, 0, 256)) > 0) {
+						
+						for(int k = 0;k < count;k++){
+							deal[middle+k] = data[k];
+						}
+						middle = middle + count;
+						//从deal中查找帧  如果没有找到帧  则放弃。
+						//首先查找0x68  直到找到0x68为止
+						int ret = checkFrame(deal, middle);
+						switch(ret){
+						case 0:
+							//数据不够  继续接收
+							break;
+						case -1:
+							//这一帧错误
+							middle = 0;  //重新开始接收
+							break;
+						case 1:
+							//这一帧正确处理
+							//get the frame len
+							int framelen = (deal[1]&0xFF) | ((deal[2]&0xFF)<<8);
+							framelen = framelen >> 2;
+							
+							if(deal[12] == 0x0B){  //AFN
+								//数据帧
+								int slave_seq_ = deal[13] & 0x0F;
+								if(slave_seq != slave_seq_){
+									slave_seq = slave_seq_;
+									
+									frame_all = (deal[15] & 0xFF) | ((deal[16] & 0xFF) << 8);
+									frame_count = (deal[17] & 0xFF) | ((deal[18] & 0xFF) << 8);
+									
+									Frame readdata = new Frame(Arrays.copyOf(deal, framelen+8));
+									byte[] meterdata = readdata.getData();
+									int metercount = (meterdata.length-1-3-4)/14;
+									meters -= metercount;
+									
+									//判断表的状态  看是否超时  
+									for(int i = 0;i < metercount;i++){
+										byte state = meterdata[i*14+4+3+1+12];
+										if(((state &0x40) ==0x40) || ((state &0x80)==0x80)){
+											timeout_count++;
+										}else{
+											normal++;
+										}
+									}
+									ReadMeterLogDao.addReadMeterLogs(readlogid,gprs,metercount,meterdata);
+									
+								}else{
+									//这条数据我已经收到过了  do nothing
+								}
+							}else{
+								//抄全部表时   上传的Fake帧   AFN==0x0F
+								//donothing ...  防止socket 2min超时
+							}
+							//多帧时   为接收下一帧做准备
+							middle = middle - framelen-8;
+							if(middle != 0){
+								for(int m = 0;m < middle;m++){
+									middle_data[m]=deal[framelen+8+m];
+								}
+								for(int m = 0;m < middle;m++){
+									deal[m]=middle_data[m];
+								}
+							}
+							break;
+						}
+						
+						if (frame_all == frame_count) {
+							//跳出接收循环
+							read_good = 1;
+							break;
+						}
+					}
+				} catch (SocketTimeoutException e) {
+					if(read_good == 0){
+						timeout = true;
+						rcv_6mtimeout_count++;
+						e.printStackTrace();
+					}
+				}
+				
+				if(timeout){
+					//本次接收指令超时。   接收抄表数据6min超时
+//					timeout_count = meters;
+//					break;
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+		}
+		
+		try {
+			if(out!=null){
+				out.close();
+			}
+			if(in!=null){
+				in.close();
+			}
+			if(s!=null){
+				s.close();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		result.put("result", "正常"+normal+";异常"+timeout_count);
+		result.put("success", "true");
+		if(timeout){
+			result.put("error", "接收数据超时");
+		}else{
+			result.put("error", "");
+		}
+		
+		latch.countDown();
+		
+	}
+
+	
 	/**
 	 * 检查从socket中接收到的数据    是否是一帧 
 	 * @param deal

@@ -664,7 +664,7 @@ public class ReadMeter extends Thread{
 			byte[] framedata = new byte[13];
 			framedata[0] = 0x11;
 			for(int j= 0;j < 5;j++){
-				framedata[j+1] = meteraddr[4-j];
+				framedata[j+1] = cjqaddr[4-j];
 			}
 			for(int j= 0;j < 7;j++){
 				framedata[j+6] = meteraddr[6-j];
@@ -685,7 +685,7 @@ public class ReadMeter extends Thread{
 			
 			try {
 				//等待集中器返回数据  15s
-				s.setSoTimeout(15000);
+				s.setSoTimeout(20000);
 				byte[] deal = new byte[256];
 				int middle = 0;
 				timeout = false;

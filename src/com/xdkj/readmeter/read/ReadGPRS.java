@@ -868,7 +868,10 @@ public class ReadGPRS extends Thread {
 										}
 									}
 									ReadMeterLogDao.addReadMeterLogs(readlogid,gprs,metercount,meterdata);
-									
+									if (frame_all == frame_count) {
+										//跳出接收循环
+										read_good = 1;
+									}
 								}else{
 									//这条数据我已经收到过了  do nothing
 								}
@@ -889,9 +892,8 @@ public class ReadGPRS extends Thread {
 							break;
 						}
 						
-						if (frame_all == frame_count) {
+						if (read_good == 1) {
 							//跳出接收循环
-							read_good = 1;
 							break;
 						}
 					}

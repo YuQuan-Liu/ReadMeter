@@ -113,6 +113,7 @@ public class ReadMeterLogDao {
 			}
 			break;
 		case 2:
+		case 5:
 			meterstatus_l = data[20];
 			meterstatus_h = data[21];
 			valvestatus = data[20];

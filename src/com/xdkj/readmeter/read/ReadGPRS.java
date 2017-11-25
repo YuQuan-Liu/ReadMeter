@@ -812,7 +812,7 @@ public class ReadGPRS extends Thread {
 			int meters = MeterDao.getMeterCountByGID(gprs.getPid());
 			try {
 				//等待集中器返回数据
-				s.setSoTimeout(120000);   //2min  抄集中器全部表时   会每隔9s发送一个Fake帧
+				s.setSoTimeout(240000);   //2min  抄集中器全部表时   会每隔9s发送一个Fake帧
 				timeout = false;
 				try {
 					byte[] deal = new byte[1024];
